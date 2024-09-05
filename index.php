@@ -1,10 +1,16 @@
 <?php
 
 require 'API.php';
+require 'Database.php';
+
+$target = "1754604672583913472";
+
+$db = new Database($target);
+die();
 
 $api = new API();
 
-$res = $api->userTweets(ProfileSection::Tweets, "1754604672583913472");
+$res = $api->userTweets(ProfileSection::Tweets, $target);
 if ($res == "") die("Couldn't fetch tweets!");
 /*$j = fopen("test/5.json", "w");
 fwrite($j, $res);

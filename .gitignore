@@ -1,3 +1,5 @@
 headers_twitter.json
+databases/
+!databases/.gitkeep
 test/
 results/

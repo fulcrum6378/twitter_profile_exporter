@@ -1,5 +1,6 @@
 <?php
 
+/** Requires the `curl` extension to be enabled. */
 class API {
     private array $headers = array();
     private string $featuresAndFieldToggles;
@@ -73,8 +74,8 @@ class API {
                 '"userId":"' . $userId . '",' .
                 '"count":' . $count . ',' . // maximum: 20
                 ($cursor ? ('"cursor":"' . $cursor . '",') : '') .
-                '"includePromotedContent":false,' .
-                (($sect == ProfileSection::Tweets) ? '"withQuickPromoteEligibilityTweetFields":true,' : '') .
+                '"includePromotedContent":false,' . // true
+                (($sect == ProfileSection::Tweets) ? '"withQuickPromoteEligibilityTweetFields":false,' : '') . // true
                 (($sect == ProfileSection::Replies) ? '"withCommunity":true,' : '') .
                 ($medOrLikes ? '"withClientEventToken":false,' : '') .
                 ($medOrLikes ? '"withBirdwatchNotes":false,' : '') .
