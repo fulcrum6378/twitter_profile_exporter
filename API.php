@@ -43,7 +43,6 @@ class API {
 
     function get(string $url): string {
         $curl = curl_init();
-        /** @noinspection SpellCheckingInspection */
         curl_setopt_array($curl, array(
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => "GET",
@@ -55,28 +54,30 @@ class API {
             CURLOPT_RETURNTRANSFER => true,
             //CURLOPT_VERBOSE => 1,
         ));
-
         $res = curl_exec($curl); // $err = curl_error($curl);
         curl_close($curl);
-        return $res;
+        return $res ?: '';
     }
 
-    function userTweets(ProfileSection $sect, string $userId, int $count = 20, string $cursor = null): string {
+    function userTweets(ProfileSection $sect, string $userId, string $cursor = null, int $count = 20): string {
+        $medOrLikes = $sect == ProfileSection::Media || $sect == ProfileSection::Likes;
         /** @noinspection SpellCheckingInspection */
         return $this->get($this->baseUrl .
             match ($sect) {
-                ProfileSection::Tweets => "/E3opETHurmVJflFsUBVuUQ/UserTweets",
+                ProfileSection::Tweets => "E3opETHurmVJflFsUBVuUQ/UserTweets",
                 ProfileSection::Replies => "bt4TKuFz4T7Ckk-VvQVSow/UserTweetsAndReplies",
                 ProfileSection::Media => "dexO_2tohK86JDudXXG3Yw/UserMedia",
-            } . "?variables=" . urlencode('{' .
+                ProfileSection::Likes => "aeJWz--kknVBOl7wQ7gh7Q/Likes",
+            } .
+            "?variables=" . urlencode('{' .
                 '"userId":"' . $userId . '",' .
-                '"count":' . $count . ',' .
+                '"count":' . $count . ',' . // maximum: 20
                 ($cursor ? ('"cursor":"' . $cursor . '",') : '') .
                 '"includePromotedContent":false,' .
                 (($sect == ProfileSection::Tweets) ? '"withQuickPromoteEligibilityTweetFields":true,' : '') .
                 (($sect == ProfileSection::Replies) ? '"withCommunity":true,' : '') .
-                (($sect == ProfileSection::Media) ? '"withClientEventToken":false,' : '') .
-                (($sect == ProfileSection::Media) ? '"withBirdwatchNotes":false,' : '') .
+                ($medOrLikes ? '"withClientEventToken":false,' : '') .
+                ($medOrLikes ? '"withBirdwatchNotes":false,' : '') .
                 '"withVoice":true,' .
                 '"withV2Timeline":true' .
                 '}') . $this->featuresAndFieldToggles
@@ -88,5 +89,5 @@ enum ProfileSection {
     case Tweets;
     case Replies;
     case Media;
-    //case Likes;
+    case Likes;
 }
