@@ -1,43 +1,59 @@
 <?php
-
 require 'API.php';
 require 'Database.php';
 
 $target = "1754604672583913472";
-
 $db = new Database($target);
-die();
-
 $api = new API();
 
-$res = $api->userTweets(ProfileSection::Tweets, $target);
-if ($res == "") die("Couldn't fetch tweets!");
-/*$j = fopen("test/5.json", "w");
-fwrite($j, $res);
-fclose($j);*/
+# loop on consecutive requests
+$ended = false;
+$cursor = null;
+$iFetch = 1;
+while (!$ended) {
+    $res = $api->userTweets(ProfileSection::Tweets, $target, $cursor);
+    if ($res == "") die("Couldn't fetch tweets!");
+    $j = fopen("results/" . $iFetch . ".json", "w");
+    fwrite($j, $res);
+    fclose($j);
 
-foreach (json_decode($res)->data->user->result->timeline_v2->timeline->instructions as $instruction) {
-    switch ($instruction->type) {
-        case "TimelinePinEntry":
-            parseEntry($instruction->entry);
-            break;
-        case "TimelineAddEntries":
-            foreach ($instruction->entries as $entry)
-                parseEntry($entry);
-            break;
+    foreach (json_decode($res)->data->user->result->timeline_v2->timeline->instructions as $instruction) {
+        switch ($instruction->type) {
+            case "TimelinePinEntry":
+                parseEntry($instruction->entry);
+                break;
+            case "TimelineAddEntries":
+                if (count($instruction->entries) <= 2)
+                    $ended = true;
+                foreach ($instruction->entries as $entry)
+                    parseEntry($entry);
+                break;
+        }
     }
+    $iFetch++;
 }
 
 function parseEntry(stdClass $entry): void {
+    global $cursor;
     if (str_starts_with($entry->entryId, "who-to-follow") ||
-        str_starts_with($entry->entryId, "cursor")) return;
+        str_starts_with($entry->entryId, "cursor-top")) return;
+    if (str_starts_with($entry->entryId, "cursor-bottom")) {
+        $cursor = $entry->content->value;
+        return;
+    }
 
-    $data = fixTweet($entry->content->itemContent->tweet_results->result);
-    $j = fopen("results/" . $data->id_str . ".json", "w");
-    fwrite($j, json_encode($data, JSON_PRETTY_PRINT));
-    fclose($j);
-    echo $data->id_str . ' => ' . $data->full_text . '
-';
+    if (property_exists($entry->content, "itemContent"))
+        parseTweet($entry->content->itemContent->tweet_results->result);
+    else foreach ($entry->content->items as $item)
+        parseTweet($item->item->itemContent->tweet_results->result);
+}
+
+function parseTweet(stdClass $tweet): void {
+    global $db;
+    $userId = intval($tweet->core->user_results->result->rest_id);
+    $db->checkIfUserExists($userId);
+    $db->checkIfRowExists($db->User, 2);
+    // TODO fill the database
 }
 
 function fixTweet(stdClass $tweet): stdClass {
@@ -72,7 +88,6 @@ function fixTweet(stdClass $tweet): stdClass {
     if (property_exists($tweet, "quoted_status_result")) {
         if (property_exists($data, "quoted_status_result")) die("WTF!");
         $data->quoted_status_result = fixTweet($tweet->quoted_status_result->result);
-        echo "KIR". $data->id_str.'   ';
     }
     if (property_exists($data, "retweeted_status_result"))
         $data->retweeted_status_result = fixTweet($data->retweeted_status_result->result);

@@ -2,17 +2,27 @@
 
 /** Requires the `sqlite3` extension to be enabled. */
 class Database {
+    public string $User = "User";
+    public string $Tweet = "Tweet";
+    public string $TweetCount = "TweetCount";
+    public string $Media = "Media";
+
     private SQLite3 $db;
+    public array $userIds = array();
 
     function __construct(string $userId) {
         $preExisting = file_exists("databases/" . $userId . ".db");
         $this->db = new SQLite3("databases/" . $userId . ".db");
-        if (!$preExisting) $this->createTables();
+        if (!$preExisting)
+            $this->createTables();
+        else
+            while ($res = $this->db->query("SELECT id FROM User")->fetchArray(SQLITE3_ASSOC))
+                $this->userIds[] = $res['id'];
     }
 
     function createTables(): void {
         $this->db->exec(<<<EOF
-    CREATE TABLE User
+    CREATE TABLE $this->User
     (
         id INT PRIMARY KEY     NOT NULL,
         user           TEXT    NOT NULL,
@@ -22,7 +32,7 @@ class Database {
         pinned_tweet   INT,
         FOREIGN KEY (pinned_tweet) REFERENCES Tweet(id)
     );
-    CREATE TABLE Tweet
+    CREATE TABLE $this->Tweet
     (
         id INT PRIMARY KEY     NOT NULL,
         user           INT     NOT NULL,
@@ -45,7 +55,7 @@ class Database {
         FOREIGN KEY (media3)       REFERENCES Media(id),
         FOREIGN KEY (media4)       REFERENCES Media(id)
     );
-    CREATE TABLE TweetCount
+    CREATE TABLE $this->TweetCount
     (
         id INT PRIMARY KEY     NOT NULL,
         bookmark       INT,
@@ -56,17 +66,23 @@ class Database {
         view           INT,
         FOREIGN KEY (id)           REFERENCES Tweet(id)
     );
-    CREATE TABLE Media
+    CREATE TABLE $this->Media
     (
         id INT PRIMARY KEY     NOT NULL,
         type           TEXT    NOT NULL,
         url            TEXT    NOT NULL
     );
 EOF
-        ); // CREATE TABLE IF NOT EXISTS <NAME>
+        );
     }
 
-    // https://www.tutorialspoint.com/sqlite/sqlite_php.htm
+    function checkIfUserExists(int $id): bool {
+        return in_array($id, $this->userIds);
+    }
+
+    function checkIfRowExists(string $table, int $id): bool {
+        return $this->db->query("SELECT EXISTS(SELECT 1 FROM $table WHERE id = $id);")->fetchArray()[0] == 1;
+    }
 
     function __destruct() {
         $this->db->close();
