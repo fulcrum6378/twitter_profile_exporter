@@ -2,27 +2,28 @@
 require 'API.php';
 require 'Database.php';
 
-$target = "1754604672583913472";
+$target = '1754604672583913472';
 $db = new Database($target);
 $api = new API();
 
 # loop on consecutive requests
+if (!file_exists('cache/lists')) mkdir('cache/lists');
 $ended = false;
 $cursor = null;
 $iFetch = 1;
 while (!$ended) {
     $res = $api->userTweets(ProfileSection::Tweets, $target, $cursor);
     if ($res == "") die("Couldn't fetch tweets!");
-    $j = fopen("results/" . $iFetch . ".json", "w");
+    $j = fopen('cache/lists/' . $iFetch . '.json', 'w');
     fwrite($j, $res);
     fclose($j);
 
     foreach (json_decode($res)->data->user->result->timeline_v2->timeline->instructions as $instruction) {
         switch ($instruction->type) {
-            case "TimelinePinEntry":
+            case 'TimelinePinEntry':
                 parseEntry($instruction->entry);
                 break;
-            case "TimelineAddEntries":
+            case 'TimelineAddEntries':
                 if (count($instruction->entries) <= 2)
                     $ended = true;
                 foreach ($instruction->entries as $entry)
@@ -35,14 +36,14 @@ while (!$ended) {
 
 function parseEntry(stdClass $entry): void {
     global $cursor;
-    if (str_starts_with($entry->entryId, "who-to-follow") ||
-        str_starts_with($entry->entryId, "cursor-top")) return;
-    if (str_starts_with($entry->entryId, "cursor-bottom")) {
+    if (str_starts_with($entry->entryId, 'who-to-follow') ||
+        str_starts_with($entry->entryId, 'cursor-top')) return;
+    if (str_starts_with($entry->entryId, 'cursor-bottom')) {
         $cursor = $entry->content->value;
         return;
     }
 
-    if (property_exists($entry->content, "itemContent"))
+    if (property_exists($entry->content, 'itemContent'))
         parseTweet($entry->content->itemContent->tweet_results->result);
     else foreach ($entry->content->items as $item)
         parseTweet($item->item->itemContent->tweet_results->result);
@@ -50,47 +51,40 @@ function parseEntry(stdClass $entry): void {
 
 function parseTweet(stdClass $tweet): void {
     global $db;
+    if ($db->checkIfRowExists($db->Tweet, intval($tweet->rest_id)))
+        return;
+
+    // user
     $userId = intval($tweet->core->user_results->result->rest_id);
-    $db->checkIfUserExists($userId);
-    $db->checkIfRowExists($db->User, 2);
-    // TODO fill the database
-}
+    if (!$db->checkIfUserExists($userId)) {
+        // TODO insert User
+    }
 
-function fixTweet(stdClass $tweet): stdClass {
-    $data = $tweet->legacy;
-
-    // new features
-    if (property_exists($tweet->views, "count"))
-        $data->view_count = intval($tweet->views->count);
-
-    // unnecessary fields
-    if (property_exists($data, "bookmarked")) unset($data->bookmarked);
-    if (property_exists($data, "display_text_range")) unset($data->display_text_range);
-    if (property_exists($data, "extended_entities")) unset($data->extended_entities);
-    if (property_exists($data, "favorited")) unset($data->favorited);
-    if (property_exists($data, "retweeted")) unset($data->retweeted);
+    // time (e.g. "Wed Sep 04 21:52:19 +0000 2024")
+    $time = 0;
+    // TODO parse date & time
 
     // media
-    if (property_exists($data->entities, "media"))
-        foreach ($data->entities->media as $medium) {
-            if (property_exists($medium, "features")) unset($medium->features);
-            if (property_exists($medium, "sizes")) unset($medium->sizes);
-            if (property_exists($medium, "original_info") &&
-                property_exists($medium->original_info, "focus_rects"))
-                unset($medium->original_info->focus_rects);
-            if (property_exists($medium, "allow_download_status")) unset($medium->allow_download_status);
-            if (property_exists($medium, "media_results")) unset($medium->media_results);
-        }
+    $media = null;
+    // TODO process media
+    // TODO insert Media
+    // TODO download media
 
-    // attached tweets
-    if (property_exists($data, "quoted_status_result"))
-        $data->quoted_status_result = fixTweet($data->quoted_status_result->result);
-    if (property_exists($tweet, "quoted_status_result")) {
-        if (property_exists($data, "quoted_status_result")) die("WTF!");
-        $data->quoted_status_result = fixTweet($tweet->quoted_status_result->result);
-    }
-    if (property_exists($data, "retweeted_status_result"))
-        $data->retweeted_status_result = fixTweet($data->retweeted_status_result->result);
+    // reply
+    $replied_to = null;
+    if (property_exists($tweet->lagecy, 'in_reply_to_status_id_str'))
+        $replied_to = intval($tweet->lagecy->in_reply_to_status_id_str);
+    // TODO insert the replied tweet too
 
-    return $data;
+    // retweet & quote
+    $retweet_of = null; // TODO
+    $is_quote = false; // TODO
+    // TODO insert the retweeted tweet too
+
+    $db->insertTweet($userId, $time,
+        $tweet->lagecy->retweeted ? null : $tweet->legacy->full_text, $tweet->legacy->lang,
+        $media, $replied_to, $retweet_of, $is_quote
+    );
+
+    // TODO insert TweetCount
 }

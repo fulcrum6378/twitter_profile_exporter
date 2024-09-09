@@ -4,15 +4,15 @@
 class API {
     private array $headers = array();
     private string $featuresAndFieldToggles;
-    private string $baseUrl = "https://x.com/i/api/graphql/";
+    private string $baseUrl = 'https://x.com/i/api/graphql/';
 
     function __construct() {
         # parse the intercepted headers
-        foreach (json_decode(file_get_contents("headers_twitter.json")) as $key => $value)
+        foreach (json_decode(file_get_contents('headers_twitter.json')) as $key => $value)
             $this->headers[] = $key . ': ' . $value;
 
         /** @noinspection SpellCheckingInspection */
-        $this->featuresAndFieldToggles = "&features=" . urlencode('{' .
+        $this->featuresAndFieldToggles = '&features=' . urlencode('{' .
                 '"rweb_tipjar_consumption_enabled":true,' .
                 '"responsive_web_graphql_exclude_directive_enabled":true,' .
                 '"verified_phone_label_enabled":false,' .
@@ -37,7 +37,7 @@ class API {
                 '"longform_notetweets_inline_media_enabled":true,' .
                 '"responsive_web_enhance_cards_enabled":false' .
                 '}') .
-            "&fieldToggles=" . urlencode('{"' .
+            '&fieldToggles=' . urlencode('{"' .
                 'withArticlePlainText":false' .
                 '}');
     }
@@ -46,7 +46,7 @@ class API {
         $curl = curl_init();
         curl_setopt_array($curl, array(
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => "GET",
+            CURLOPT_CUSTOMREQUEST => 'GET',
             CURLOPT_URL => $url,
             CURLOPT_HTTPHEADER => $this->headers,
             CURLOPT_PROXY => '127.0.0.1:8580',
@@ -65,12 +65,12 @@ class API {
         /** @noinspection SpellCheckingInspection */
         return $this->get($this->baseUrl .
             match ($sect) {
-                ProfileSection::Tweets => "E3opETHurmVJflFsUBVuUQ/UserTweets",
-                ProfileSection::Replies => "bt4TKuFz4T7Ckk-VvQVSow/UserTweetsAndReplies",
-                ProfileSection::Media => "dexO_2tohK86JDudXXG3Yw/UserMedia",
-                ProfileSection::Likes => "aeJWz--kknVBOl7wQ7gh7Q/Likes",
+                ProfileSection::Tweets => 'E3opETHurmVJflFsUBVuUQ/UserTweets',
+                ProfileSection::Replies => 'bt4TKuFz4T7Ckk-VvQVSow/UserTweetsAndReplies',
+                ProfileSection::Media => 'dexO_2tohK86JDudXXG3Yw/UserMedia',
+                ProfileSection::Likes => 'aeJWz--kknVBOl7wQ7gh7Q/Likes',
             } .
-            "?variables=" . urlencode('{' .
+            '?variables=' . urlencode('{' .
                 '"userId":"' . $userId . '",' .
                 '"count":' . $count . ',' . // maximum: 20
                 ($cursor ? ('"cursor":"' . $cursor . '",') : '') .

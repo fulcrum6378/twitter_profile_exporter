@@ -1,5 +1,3 @@
 headers_twitter.json
 databases/
-!databases/.gitkeep
 cache/
-!cache/.gitkeep
