@@ -110,6 +110,38 @@ EOF
         $q->execute();
     }
 
+    function updateUser(
+        int     $id,
+        string  $user,
+        string  $name,
+        ?string $description,
+        ?string $location,
+        ?string $photo,
+        ?string $banner,
+        int     $following,
+        int     $followers,
+        int     $tweets,
+        int     $media,
+        ?int    $pinned_t
+    ): void {
+        $q = $this->db->prepare('UPDATE User SET ' .
+            'user=?, name=?, description=?, location=?, photo=?, banner=?, following=?, followers=?, ' .
+            'tweets=?, media=?, pinned_t=? WHERE id = ?');
+        $q->bindValue(1, $user);
+        $q->bindValue(2, $name);
+        $q->bindValue(3, $description);
+        $q->bindValue(4, $location);
+        $q->bindValue(5, $photo);
+        $q->bindValue(6, $banner);
+        $q->bindValue(7, $following);
+        $q->bindValue(8, $followers);
+        $q->bindValue(9, $tweets);
+        $q->bindValue(10, $media);
+        $q->bindValue(11, $pinned_t);
+        $q->bindValue(12, $id);
+        $q->execute();
+    }
+
     function insertTweet(
         int     $id,
         int     $user,
@@ -156,8 +188,25 @@ EOF
         $q->execute();
     }
 
-    function updateTweetStat(): void {
-        //"UPDATE birthdays SET name = ?, month = ?, day = ? WHERE id = ?"
+    function updateTweetStat(
+        int  $id,
+        ?int $bookmark,
+        ?int $favorite,
+        ?int $quote,
+        ?int $reply,
+        ?int $retweet,
+        ?int $view,
+    ): void {
+        $q = $this->db->prepare('UPDATE TweetStat SET ' .
+            'bookmark=?, favorite=?, quote=?, reply=?, retweet=?, view=? WHERE id = ?');
+        $q->bindValue(1, $bookmark);
+        $q->bindValue(2, $favorite);
+        $q->bindValue(3, $quote);
+        $q->bindValue(4, $reply);
+        $q->bindValue(5, $retweet);
+        $q->bindValue(6, $view);
+        $q->bindValue(7, $id);
+        $q->execute();
     }
 
     function insertMedia(): void {}

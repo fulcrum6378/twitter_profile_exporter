@@ -14,9 +14,13 @@ $api = new API();
 $profileImages = 'https://pbs.twimg.com/profile_images/';
 $profileBanners = 'https://pbs.twimg.com/profile_banners/';
 
-# loop on consecutive requests
+# create necessary directories
 $cacheDir = "cache/$target";
 if (!file_exists($cacheDir)) mkdir($cacheDir, recursive: true);
+$mediaDir = "media/$target";
+if (!file_exists($mediaDir)) mkdir($mediaDir, recursive: true);
+
+# loop on consecutive requests
 $ended = false;
 $cursor = null;
 $iFetch = 1;
@@ -75,29 +79,45 @@ function parseEntry(stdClass $entry): void {
 }
 
 function parseTweet(stdClass $tweet): void {
-    global $db, $parsedUsers, $profileImages, $profileBanners;
+    global $db, $parsedUsers, $profileImages, $profileBanners, $mediaDir;
     $tweetId = intval($tweet->rest_id);
-
-    if ($db->checkIfRowExists($db->Tweet, intval($tweet->rest_id))) {
-        // TODO update TweetStat
-        return;
-    }
 
     # User
     $userId = intval($tweet->core->user_results->result->rest_id);
-    if (!in_array($userId, $parsedUsers)) { // TODO $db->checkIfUserExists($userId) then UPDATE
+    if (!in_array($userId, $parsedUsers)) {
         $ul = $tweet->core->user_results->result->legacy;
-        $pinnedTweets = $ul->pinned_tweet_ids_str;
-        $db->insertUser($userId,
-            $ul->screen_name, $ul->name, $ul->description,
-            strtotime($ul->created_at), $ul->location,
-            substr($ul->profile_image_url_https, strlen($profileImages)),
-            substr($ul->profile_banner_url, strlen($profileBanners)),
-            $ul->friends_count, $ul->followers_count,
-            $ul->statuses_count, $ul->media_count,
-            (count($pinnedTweets) > 0) ? $pinnedTweets[0] : null);
+        $photo = str_replace('_normal', '', substr($ul->profile_image_url_https, strlen($profileImages)));
+        $banner = substr($ul->profile_banner_url, strlen($profileBanners));
+        $pinnedTweet = (count($ul->pinned_tweet_ids_str) > 0) ? $ul->pinned_tweet_ids_str[0] : null;
+        if (!$db->checkIfRowExists($db->User, $userId))
+            $db->insertUser($userId,
+                $ul->screen_name, $ul->name, $ul->description,
+                strtotime($ul->created_at), $ul->location, $photo, $banner,
+                $ul->friends_count, $ul->followers_count,
+                $ul->statuses_count, $ul->media_count,
+                $pinnedTweet);
+        else
+            $db->updateUser($userId,
+                $ul->screen_name, $ul->name, $ul->description,
+                $ul->location, $photo, $banner,
+                $ul->friends_count, $ul->followers_count,
+                $ul->statuses_count, $ul->media_count,
+                $pinnedTweet);
         $parsedUsers[] = $userId;
     }
+
+    # update TweetStat and end the function if the tweet already exists
+    if ($db->checkIfRowExists($db->Tweet, intval($tweet->rest_id))) {
+        $db->updateTweetStat($tweetId,
+            $tweet->legacy->bookmark_count,
+            $tweet->legacy->favorite_count,
+            $tweet->legacy->quote_count,
+            $tweet->legacy->reply_count,
+            $tweet->legacy->retweet_count,
+            property_exists($tweet->views, 'count') ? intval($tweet->views->count) : null);
+        return;
+    }
+
 
     # Media
     $media = null;
@@ -123,8 +143,7 @@ function parseTweet(stdClass $tweet): void {
     $db->insertTweet($tweetId,
         $userId, strtotime($tweet->legacy->created_at),
         $tweet->legacy->retweeted ? null : $tweet->legacy->full_text, $tweet->legacy->lang,
-        $media, $replied_to, $retweet_of, $is_quote
-    );
+        $media, $replied_to, $retweet_of, $is_quote);
 
     # TweetStats
     $db->insertTweetStat($tweetId,
@@ -133,7 +152,7 @@ function parseTweet(stdClass $tweet): void {
         $tweet->legacy->quote_count,
         $tweet->legacy->reply_count,
         $tweet->legacy->retweet_count,
-        intval($tweet->views->count)); // FIXME PHP Warning:  Undefined property: stdClass::$count
+        property_exists($tweet->views, 'count') ? intval($tweet->views->count) : null);
 }
 
 /*function parseDateTime(string $str): int {
