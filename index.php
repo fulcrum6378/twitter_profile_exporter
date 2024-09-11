@@ -5,6 +5,7 @@ require 'Database.php';
 # $_GET
 $target = '1754604672583913472';
 $maxTweets = 10;
+$useCache = true;
 
 # modules
 $db = new Database($target);
@@ -14,6 +15,7 @@ $api = new API();
 $twimgImages = 'https://pbs.twimg.com/profile_images/';
 $twimgBanners = 'https://pbs.twimg.com/profile_banners/';
 $twimgMedia = 'https://pbs.twimg.com/media/';
+$maxRetry = 3;
 
 # create necessary directories
 $cacheDir = "cache/$target";
@@ -29,9 +31,9 @@ $parsedTweetsCount = 0;
 $parsedUsers = array();
 while (!$ended) {
     $cacheFile = "$cacheDir/$iFetch.json";
-    $useCache = file_exists($cacheFile);
-    $j = fopen($cacheFile, $useCache ? 'r' : 'w');
-    if (!$useCache) {
+    $doUseCache = $useCache && file_exists($cacheFile);
+    $j = fopen($cacheFile, $doUseCache ? 'r' : 'w');
+    if (!$doUseCache) {
         $res = $api->userTweets(ProfileSection::Tweets, $target, $cursor);
         if ($res == "") {
             fclose($j);
@@ -80,7 +82,7 @@ function parseEntry(stdClass $entry): void {
 }
 
 function parseTweet(stdClass $tweet): void {
-    global $db, $parsedUsers, $twimgImages, $twimgBanners, $twimgMedia, $mediaDir;
+    global $db, $maxRetry, $mediaDir, $parsedUsers, $twimgImages, $twimgBanners, $twimgMedia;
     $tweetId = intval($tweet->rest_id);
 
     # User
@@ -89,18 +91,19 @@ function parseTweet(stdClass $tweet): void {
         $ul = $tweet->core->user_results->result->legacy;
         $photo = str_replace('_normal', '', substr($ul->profile_image_url_https, strlen($twimgImages)));
         $banner = substr($ul->profile_banner_url, strlen($twimgBanners));
+        $link = property_exists($ul, 'url') ? $ul->entities->url->urls[0]->expanded_url : null;
         $pinnedTweet = (count($ul->pinned_tweet_ids_str) > 0) ? $ul->pinned_tweet_ids_str[0] : null;
         if (!$db->checkIfRowExists($db->User, $userId))
             $db->insertUser($userId,
                 $ul->screen_name, $ul->name, $ul->description,
-                strtotime($ul->created_at), $ul->location, $photo, $banner,
+                strtotime($ul->created_at), $ul->location, $photo, $banner, $link,
                 $ul->friends_count, $ul->followers_count,
                 $ul->statuses_count, $ul->media_count,
                 $pinnedTweet);
         else
             $db->updateUser($userId,
                 $ul->screen_name, $ul->name, $ul->description,
-                $ul->location, $photo, $banner,
+                $ul->location, $photo, $banner, $link,
                 $ul->friends_count, $ul->followers_count,
                 $ul->statuses_count, $ul->media_count,
                 $pinnedTweet);
@@ -120,16 +123,8 @@ function parseTweet(stdClass $tweet): void {
     }
 
 
-    # Media
-    $media = null;
-    if (property_exists($tweet->legacy->entities, 'media')) foreach ($tweet->legacy->entities->media as $med) {
-        if ($media == null) $media = $med->id_str;
-        else $media .= $med->id_str;
-        $medId = intval($med->id_str);
-        $fileName = substr($med->media_url_https, strlen($twimgMedia));
-        $db->insertMedia($medId, $med->type, $fileName);
-        download($med->media_url_https, "$mediaDir/$fileName");
-    }
+    # main text
+    $text = $tweet->legacy->full_text;
 
     # reply
     $replied_to = null;
@@ -138,20 +133,60 @@ function parseTweet(stdClass $tweet): void {
 
     # retweet & quote
     $retweet_of = null;
-    if (property_exists($tweet->legacy, 'quoted_status_id_str'))
-        $retweet_of = intval($tweet->legacy->quoted_status_id_str);
-    $is_quote = property_exists($tweet, 'quoted_status_result');
-    if (property_exists($tweet->legacy, 'retweeted_status_result'))
+    $is_quote = false;
+    if (property_exists($tweet->legacy, 'retweeted_status_result')) {
+        $retweet_of = intval($tweet->legacy->retweeted_status_result->result->rest_id);
         parseTweet($tweet->legacy->retweeted_status_result->result);
-    if ($is_quote)
+    }
+    if (property_exists($tweet, 'quoted_status_result')) {
+        $retweet_of = intval($tweet->quoted_status_result->result->rest_id);
+        $is_quote = true;
         parseTweet($tweet->quoted_status_result->result);
+    }
 
+    # insert Media(s) and download file(s)
+    $media = null;
+    $iMed = 0;
+    if (property_exists($tweet->legacy->entities, 'media')) foreach ($tweet->legacy->entities->media as $med) {
+        if ($media == null) $media = $med->id_str;
+        else $media .= $med->id_str;
+        $medId = intval($med->id_str);
+        $fileName = substr($med->media_url_https, strlen($twimgMedia));
+
+        # insert a reference into the database
+        $db->insertMedia($medId, $fileName, $tweetId, $iMed);
+
+        # download
+        $dlRes = file_exists("$mediaDir/$fileName");
+        $retryCount = 0;
+        while (!$dlRes) {
+            $dlRes = download($med->media_url_https, "$mediaDir/$fileName");
+            if (!$dlRes) {
+                $retryCount++;
+                if ($retryCount >= $maxRetry) {
+                    echo "Couldn't download $med->media_url_https\n";
+                    break;
+                } else
+                    echo "Retrying for media...\n";
+            }
+        }
+        $iMed++;
+
+        # remove the link from the main text
+        $text = str_replace($med->url, '', $text);
+    }
+
+    # links
+    foreach ($tweet->legacy->entities->urls as $link)
+        $text = str_replace($link->url, $link->expanded_url, $text);
+
+    # insert Tweet
     $db->insertTweet($tweetId,
         $userId, strtotime($tweet->legacy->created_at),
-        $tweet->legacy->retweeted ? null : $tweet->legacy->full_text, $tweet->legacy->lang,
+        $text, $tweet->legacy->lang,
         $media, $replied_to, $retweet_of, $is_quote);
 
-    # TweetStats
+    # insert TweetStats
     $db->insertTweetStat($tweetId,
         $tweet->legacy->bookmark_count,
         $tweet->legacy->favorite_count,
@@ -161,7 +196,7 @@ function parseTweet(stdClass $tweet): void {
         property_exists($tweet->views, 'count') ? intval($tweet->views->count) : null);
 }
 
-function download(string $url, string $store) {
+function download(string $url, string $store): bool {
     $file = fopen($store, 'w');
     $curl = curl_init();
     curl_setopt_array($curl, array(
@@ -174,5 +209,5 @@ function download(string $url, string $store) {
     $res = curl_exec($curl);
     curl_close($curl);
     fclose($file);
-    return $res;
+    return $res == 1;
 }

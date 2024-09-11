@@ -29,10 +29,11 @@ class Database {
         location       TEXT,
         photo          TEXT,
         banner         TEXT,
+        link           TEXT,
         following      INT     NOT NULL,
         followers      INT     NOT NULL,
-        tweets         INT     NOT NULL,
-        media          INT     NOT NULL,
+        tweet_count    INT     NOT NULL,
+        media_count    INT     NOT NULL,
         pinned_t       INT,
         FOREIGN KEY (pinned_t) REFERENCES Tweet(id)
     );
@@ -65,8 +66,10 @@ class Database {
     CREATE TABLE $this->Media
     (
         id INT PRIMARY KEY     NOT NULL,
-        type           TEXT    NOT NULL,
-        url            TEXT    NOT NULL
+        file           TEXT    NOT NULL,
+        tweet          INT     NOT NULL,
+        pos            INT     NOT NULL DEFAULT(0),
+        FOREIGN KEY (tweet)    REFERENCES Tweet(id)
     );
 EOF
         );
@@ -85,15 +88,16 @@ EOF
         ?string $location,
         ?string $photo,
         ?string $banner,
+        ?string $link,
         int     $following,
         int     $followers,
-        int     $tweets,
-        int     $media,
+        int     $tweet_count,
+        int     $media_count,
         ?int    $pinned_t
     ): void {
         $q = $this->db->prepare('INSERT INTO User ' .
-            '(id, user, name, description, created_at, location, photo, banner, following, followers, ' .
-            'tweets, media, pinned_t) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            '(id, user, name, description, created_at, location, photo, banner, link, following, followers, ' .
+            'tweet_count, media_count, pinned_t) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         $q->bindValue(1, $id);
         $q->bindValue(2, $user);
         $q->bindValue(3, $name);
@@ -102,11 +106,12 @@ EOF
         $q->bindValue(6, $location);
         $q->bindValue(7, $photo);
         $q->bindValue(8, $banner);
-        $q->bindValue(9, $following);
-        $q->bindValue(10, $followers);
-        $q->bindValue(11, $tweets);
-        $q->bindValue(12, $media);
-        $q->bindValue(13, $pinned_t);
+        $q->bindValue(9, $link);
+        $q->bindValue(10, $following);
+        $q->bindValue(11, $followers);
+        $q->bindValue(12, $tweet_count);
+        $q->bindValue(13, $media_count);
+        $q->bindValue(14, $pinned_t);
         $q->execute();
     }
 
@@ -118,27 +123,29 @@ EOF
         ?string $location,
         ?string $photo,
         ?string $banner,
+        ?string $link,
         int     $following,
         int     $followers,
-        int     $tweets,
-        int     $media,
+        int     $tweet_count,
+        int     $media_count,
         ?int    $pinned_t
     ): void {
         $q = $this->db->prepare('UPDATE User SET ' .
-            'user=?, name=?, description=?, location=?, photo=?, banner=?, following=?, followers=?, ' .
-            'tweets=?, media=?, pinned_t=? WHERE id = ?');
+            'user=?, name=?, description=?, location=?, photo=?, banner=?, link=?, following=?, followers=?, ' .
+            'tweet_count=?, media_count=?, pinned_t=? WHERE id = ?');
         $q->bindValue(1, $user);
         $q->bindValue(2, $name);
         $q->bindValue(3, $description);
         $q->bindValue(4, $location);
         $q->bindValue(5, $photo);
         $q->bindValue(6, $banner);
-        $q->bindValue(7, $following);
-        $q->bindValue(8, $followers);
-        $q->bindValue(9, $tweets);
-        $q->bindValue(10, $media);
-        $q->bindValue(11, $pinned_t);
-        $q->bindValue(12, $id);
+        $q->bindValue(7, $link);
+        $q->bindValue(8, $following);
+        $q->bindValue(9, $followers);
+        $q->bindValue(10, $tweet_count);
+        $q->bindValue(11, $media_count);
+        $q->bindValue(12, $pinned_t);
+        $q->bindValue(13, $id);
         $q->execute();
     }
 
@@ -211,14 +218,15 @@ EOF
 
     function insertMedia(
         int    $id,
-        string $type,
-        string $url,
+        string $file,
+        int    $tweet,
+        int    $pos,
     ): void {
-        $q = $this->db->prepare('INSERT INTO Media ' .
-            '(id, type, url) VALUES(?, ?, ?)');
+        $q = $this->db->prepare('INSERT INTO Media (id, file, tweet, pos) VALUES(?, ?, ?, ?)');
         $q->bindValue(1, $id);
-        $q->bindValue(2, $type);
-        $q->bindValue(3, $url);
+        $q->bindValue(2, $file);
+        $q->bindValue(3, $tweet);
+        $q->bindValue(4, $pos);
         $q->execute();
     }
 
