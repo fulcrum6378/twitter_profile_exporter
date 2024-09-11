@@ -1,10 +1,10 @@
-<?php
+<?php /** @noinspection DuplicatedCode */
 
 /** Requires the `sqlite3` extension to be enabled. */
 class Database {
     public string $User = 'User';
     public string $Tweet = 'Tweet';
-    public string $TweetCount = 'TweetCount';
+    public string $TweetStat = 'TweetStat';
     public string $Media = 'Media';
 
     private SQLite3 $db;
@@ -23,9 +23,16 @@ class Database {
     (
         id INT PRIMARY KEY     NOT NULL,
         user           TEXT    NOT NULL,
-        created_at     INT     NOT NULL,
         name           TEXT    NOT NULL,
         description    TEXT,
+        created_at     INT     NOT NULL,
+        location       TEXT,
+        photo          TEXT,
+        banner         TEXT,
+        following      INT     NOT NULL,
+        followers      INT     NOT NULL,
+        tweets         INT     NOT NULL,
+        media          INT     NOT NULL,
         pinned_t       INT,
         FOREIGN KEY (pinned_t) REFERENCES Tweet(id)
     );
@@ -44,7 +51,7 @@ class Database {
         FOREIGN KEY (reply)    REFERENCES Tweet(id),
         FOREIGN KEY (retweet)  REFERENCES Tweet(id)
     );
-    CREATE TABLE $this->TweetCount
+    CREATE TABLE $this->TweetStat
     (
         id INT PRIMARY KEY     NOT NULL,
         bookmark       INT,
@@ -65,10 +72,6 @@ EOF
         );
     }
 
-    function checkIfUserExists(int $id): bool {
-        return in_array($id, $this->userIds);
-    }
-
     function checkIfRowExists(string $table, int $id): bool {
         return $this->db->query("SELECT EXISTS(SELECT 1 FROM $table WHERE id = $id);")->fetchArray()[0] == 1;
     }
@@ -76,19 +79,34 @@ EOF
     function insertUser(
         int     $id,
         string  $user,
-        int     $created_at,
         string  $name,
         ?string $description,
+        int     $created_at,
+        ?string $location,
+        ?string $photo,
+        ?string $banner,
+        int     $following,
+        int     $followers,
+        int     $tweets,
+        int     $media,
         ?int    $pinned_t
-    ) {
-        $q = $this->db->prepare("INSERT INTO User " .
-            "(id, user, created_at, name, description, pinned_t) VALUES(?, ?, ?, ?, ?, ?)");
+    ): void {
+        $q = $this->db->prepare('INSERT INTO User ' .
+            '(id, user, name, description, created_at, location, photo, banner, following, followers, ' .
+            'tweets, media, pinned_t) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         $q->bindValue(1, $id);
         $q->bindValue(2, $user);
-        $q->bindValue(3, $created_at);
-        $q->bindValue(4, $name);
-        $q->bindValue(5, $description);
-        $q->bindValue(6, $pinned_t);
+        $q->bindValue(3, $name);
+        $q->bindValue(4, $description);
+        $q->bindValue(5, $created_at);
+        $q->bindValue(6, $location);
+        $q->bindValue(7, $photo);
+        $q->bindValue(8, $banner);
+        $q->bindValue(9, $following);
+        $q->bindValue(10, $followers);
+        $q->bindValue(11, $tweets);
+        $q->bindValue(12, $media);
+        $q->bindValue(13, $pinned_t);
         $q->execute();
     }
 
@@ -103,8 +121,8 @@ EOF
         ?int    $retweet_of = null,
         bool    $is_quote = false
     ): void {
-        $q = $this->db->prepare("INSERT INTO Tweet " .
-            "(id, user, time, text, lang, media, reply, retweet, is_quote) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $q = $this->db->prepare('INSERT INTO Tweet ' .
+            '(id, user, time, text, lang, media, reply, retweet, is_quote) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)');
         $q->bindValue(1, $id);
         $q->bindValue(2, $user);
         $q->bindValue(3, $time);
@@ -116,6 +134,33 @@ EOF
         $q->bindValue(9, $is_quote ? 1 : 0);
         $q->execute();
     }
+
+    function insertTweetStat(
+        int  $id,
+        ?int $bookmark,
+        ?int $favorite,
+        ?int $quote,
+        ?int $reply,
+        ?int $retweet,
+        ?int $view,
+    ): void {
+        $q = $this->db->prepare('INSERT INTO TweetStat ' .
+            '(id, bookmark, favorite, quote, reply, retweet, view) VALUES(?, ?, ?, ?, ?, ?, ?)');
+        $q->bindValue(1, $id);
+        $q->bindValue(2, $bookmark);
+        $q->bindValue(3, $favorite);
+        $q->bindValue(4, $quote);
+        $q->bindValue(5, $reply);
+        $q->bindValue(6, $retweet);
+        $q->bindValue(7, $view);
+        $q->execute();
+    }
+
+    function updateTweetStat(): void {
+        //"UPDATE birthdays SET name = ?, month = ?, day = ? WHERE id = ?"
+    }
+
+    function insertMedia(): void {}
 
     function __destruct() {
         $this->db->close();

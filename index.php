@@ -10,6 +10,10 @@ $maxTweets = 10;
 $db = new Database($target);
 $api = new API();
 
+# constants
+$profileImages = 'https://pbs.twimg.com/profile_images/';
+$profileBanners = 'https://pbs.twimg.com/profile_banners/';
+
 # loop on consecutive requests
 $cacheDir = "cache/$target";
 if (!file_exists($cacheDir)) mkdir($cacheDir, recursive: true);
@@ -71,26 +75,31 @@ function parseEntry(stdClass $entry): void {
 }
 
 function parseTweet(stdClass $tweet): void {
-    global $db, $parsedUsers;
+    global $db, $parsedUsers, $profileImages, $profileBanners;
+    $tweetId = intval($tweet->rest_id);
+
     if ($db->checkIfRowExists($db->Tweet, intval($tweet->rest_id))) {
-        // TODO update TweetCount
+        // TODO update TweetStat
         return;
     }
 
-    # user
+    # User
     $userId = intval($tweet->core->user_results->result->rest_id);
-    if (!in_array($userId, $parsedUsers)) { // TODO $db->checkIfUserExists($userId)
-        $pinnedTweets = $tweet->core->user_results->result->legacy->pinned_tweet_ids_str;
+    if (!in_array($userId, $parsedUsers)) { // TODO $db->checkIfUserExists($userId) then UPDATE
+        $ul = $tweet->core->user_results->result->legacy;
+        $pinnedTweets = $ul->pinned_tweet_ids_str;
         $db->insertUser($userId,
-            $tweet->core->user_results->result->legacy->screen_name,
-            strtotime($tweet->core->user_results->result->legacy->created_at),
-            $tweet->core->user_results->result->legacy->name,
-            $tweet->core->user_results->result->legacy->description,
+            $ul->screen_name, $ul->name, $ul->description,
+            strtotime($ul->created_at), $ul->location,
+            substr($ul->profile_image_url_https, strlen($profileImages)),
+            substr($ul->profile_banner_url, strlen($profileBanners)),
+            $ul->friends_count, $ul->followers_count,
+            $ul->statuses_count, $ul->media_count,
             (count($pinnedTweets) > 0) ? $pinnedTweets[0] : null);
         $parsedUsers[] = $userId;
     }
 
-    # media
+    # Media
     $media = null;
     // TODO process media
     // TODO insert Media
@@ -100,20 +109,31 @@ function parseTweet(stdClass $tweet): void {
     $replied_to = null;
     if (property_exists($tweet->legacy, 'in_reply_to_status_id_str'))
         $replied_to = intval($tweet->legacy->in_reply_to_status_id_str);
-    // TODO insert the replied tweet too
 
     # retweet & quote
-    $retweet_of = null; // TODO
-    $is_quote = false; // TODO
-    // TODO insert the retweeted tweet too
+    $retweet_of = null;
+    if (property_exists($tweet->legacy, 'quoted_status_id_str'))
+        $retweet_of = intval($tweet->legacy->quoted_status_id_str);
+    $is_quote = property_exists($tweet, 'quoted_status_result');
+    if (property_exists($tweet->legacy, 'retweeted_status_result'))
+        parseTweet($tweet->legacy->retweeted_status_result->result);
+    if ($is_quote)
+        parseTweet($tweet->quoted_status_result->result);
 
-    $db->insertTweet(intval($tweet->rest_id),
+    $db->insertTweet($tweetId,
         $userId, strtotime($tweet->legacy->created_at),
         $tweet->legacy->retweeted ? null : $tweet->legacy->full_text, $tweet->legacy->lang,
         $media, $replied_to, $retweet_of, $is_quote
     );
 
-    // TODO insert TweetCount
+    # TweetStats
+    $db->insertTweetStat($tweetId,
+        $tweet->legacy->bookmark_count,
+        $tweet->legacy->favorite_count,
+        $tweet->legacy->quote_count,
+        $tweet->legacy->reply_count,
+        $tweet->legacy->retweet_count,
+        intval($tweet->views->count)); // FIXME PHP Warning:  Undefined property: stdClass::$count
 }
 
 /*function parseDateTime(string $str): int {
