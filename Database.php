@@ -8,17 +8,13 @@ class Database {
     public string $Media = 'Media';
 
     private SQLite3 $db;
-    public array $userIds = array();
 
     function __construct(string $userId) {
-        if (!file_exists('databases')) mkdir('databases');
-        $preExisting = file_exists('databases/' . $userId . '.db');
-        $this->db = new SQLite3('databases/' . $userId . '.db');
-        if (!$preExisting)
-            $this->createTables();
-        else
-            while ($res = $this->db->query("SELECT id FROM User")->fetchArray(SQLITE3_ASSOC))
-                $this->userIds[] = $res['id'];
+        $dbDir = 'databases';
+        if (!file_exists($dbDir)) mkdir($dbDir);
+        $preExisting = file_exists("$dbDir/$userId.db");
+        $this->db = new SQLite3("$dbDir/$userId.db");
+        if (!$preExisting) $this->createTables();
     }
 
     function createTables(): void {
@@ -46,7 +42,7 @@ class Database {
         is_quote       INT     DEFAULT(0),
         FOREIGN KEY (user)     REFERENCES User(id),
         FOREIGN KEY (reply)    REFERENCES Tweet(id),
-        FOREIGN KEY (retweet)  REFERENCES Tweet(id),
+        FOREIGN KEY (retweet)  REFERENCES Tweet(id)
     );
     CREATE TABLE $this->TweetCount
     (
@@ -77,7 +73,27 @@ EOF
         return $this->db->query("SELECT EXISTS(SELECT 1 FROM $table WHERE id = $id);")->fetchArray()[0] == 1;
     }
 
+    function insertUser(
+        int     $id,
+        string  $user,
+        int     $created_at,
+        string  $name,
+        ?string $description,
+        ?int    $pinned_t
+    ) {
+        $q = $this->db->prepare("INSERT INTO User " .
+            "(id, user, created_at, name, description, pinned_t) VALUES(?, ?, ?, ?, ?, ?)");
+        $q->bindValue(1, $id);
+        $q->bindValue(2, $user);
+        $q->bindValue(3, $created_at);
+        $q->bindValue(4, $name);
+        $q->bindValue(5, $description);
+        $q->bindValue(6, $pinned_t);
+        $q->execute();
+    }
+
     function insertTweet(
+        int     $id,
         int     $user,
         int     $time,
         ?string $text,
@@ -88,15 +104,16 @@ EOF
         bool    $is_quote = false
     ): void {
         $q = $this->db->prepare("INSERT INTO Tweet " .
-            "(user, time, text, lang, media, reply, retweet, is_quote) VALUES(?, ?, ?, ?, ?, ?, ?, ?)");
-        $q->bindValue(1, $user);
-        $q->bindValue(2, $time);
-        $q->bindValue(3, $text);
-        $q->bindValue(4, $lang);
-        $q->bindValue(5, $media);
-        $q->bindValue(6, $replied_to);
-        $q->bindValue(7, $retweet_of);
-        $q->bindValue(8, $is_quote ? 1 : 0);
+            "(id, user, time, text, lang, media, reply, retweet, is_quote) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $q->bindValue(1, $id);
+        $q->bindValue(2, $user);
+        $q->bindValue(3, $time);
+        $q->bindValue(4, $text);
+        $q->bindValue(5, $lang);
+        $q->bindValue(6, $media);
+        $q->bindValue(7, $replied_to);
+        $q->bindValue(8, $retweet_of);
+        $q->bindValue(9, $is_quote ? 1 : 0);
         $q->execute();
     }
 
