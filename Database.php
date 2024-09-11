@@ -209,7 +209,18 @@ EOF
         $q->execute();
     }
 
-    function insertMedia(): void {}
+    function insertMedia(
+        int    $id,
+        string $type,
+        string $url,
+    ): void {
+        $q = $this->db->prepare('INSERT INTO Media ' .
+            '(id, type, url) VALUES(?, ?, ?)');
+        $q->bindValue(1, $id);
+        $q->bindValue(2, $type);
+        $q->bindValue(3, $url);
+        $q->execute();
+    }
 
     function __destruct() {
         $this->db->close();

@@ -11,8 +11,9 @@ $db = new Database($target);
 $api = new API();
 
 # constants
-$profileImages = 'https://pbs.twimg.com/profile_images/';
-$profileBanners = 'https://pbs.twimg.com/profile_banners/';
+$twimgImages = 'https://pbs.twimg.com/profile_images/';
+$twimgBanners = 'https://pbs.twimg.com/profile_banners/';
+$twimgMedia = 'https://pbs.twimg.com/media/';
 
 # create necessary directories
 $cacheDir = "cache/$target";
@@ -79,15 +80,15 @@ function parseEntry(stdClass $entry): void {
 }
 
 function parseTweet(stdClass $tweet): void {
-    global $db, $parsedUsers, $profileImages, $profileBanners, $mediaDir;
+    global $db, $parsedUsers, $twimgImages, $twimgBanners, $twimgMedia, $mediaDir;
     $tweetId = intval($tweet->rest_id);
 
     # User
     $userId = intval($tweet->core->user_results->result->rest_id);
     if (!in_array($userId, $parsedUsers)) {
         $ul = $tweet->core->user_results->result->legacy;
-        $photo = str_replace('_normal', '', substr($ul->profile_image_url_https, strlen($profileImages)));
-        $banner = substr($ul->profile_banner_url, strlen($profileBanners));
+        $photo = str_replace('_normal', '', substr($ul->profile_image_url_https, strlen($twimgImages)));
+        $banner = substr($ul->profile_banner_url, strlen($twimgBanners));
         $pinnedTweet = (count($ul->pinned_tweet_ids_str) > 0) ? $ul->pinned_tweet_ids_str[0] : null;
         if (!$db->checkIfRowExists($db->User, $userId))
             $db->insertUser($userId,
@@ -121,9 +122,14 @@ function parseTweet(stdClass $tweet): void {
 
     # Media
     $media = null;
-    // TODO process media
-    // TODO insert Media
-    // TODO download media
+    if (property_exists($tweet->legacy->entities, 'media')) foreach ($tweet->legacy->entities->media as $med) {
+        if ($media == null) $media = $med->id_str;
+        else $media .= $med->id_str;
+        $medId = intval($med->id_str);
+        $fileName = substr($med->media_url_https, strlen($twimgMedia));
+        $db->insertMedia($medId, $med->type, $fileName);
+        download($med->media_url_https, "$mediaDir/$fileName");
+    }
 
     # reply
     $replied_to = null;
@@ -155,7 +161,18 @@ function parseTweet(stdClass $tweet): void {
         property_exists($tweet->views, 'count') ? intval($tweet->views->count) : null);
 }
 
-/*function parseDateTime(string $str): int {
-    // "Wed Sep 04 21:52:19 +0000 2024"
-
-}*/
+function download(string $url, string $store) {
+    $file = fopen($store, 'w');
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_URL => $url,
+        CURLOPT_FILE => $file,
+        CURLOPT_PROXY => '127.0.0.1:8580',
+        CURLOPT_SSL_VERIFYPEER => 0,
+        CURLOPT_TIMEOUT => 60,
+    ));
+    $res = curl_exec($curl);
+    curl_close($curl);
+    fclose($file);
+    return $res;
+}
