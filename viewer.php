@@ -1,12 +1,13 @@
 <?php
 require 'Database.php';
 
-# $_GET
-$target = $_GET['target'];
-
+$target = '1754604672583913472';
 $db = new Database($target);
-$u = $db->queryUser($target);
-if (!$u) die("Unknown user ID: $target");
+
+if (!isset($_GET['user'])) die("No user ID detected!");
+$uid = $_GET['user'];
+$u = $db->queryUser($uid);
+if (!$u) die("Unknown user ID: $uid");
 
 ?><!DOCTYPE html>
 <html lang="">
@@ -23,30 +24,57 @@ if (!$u) die("Unknown user ID: $target");
   <style>
       body {
           margin: auto;
-          TwitterChirp, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          font-family: TwitterChirp, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       }
       #banner {
           width: 100%;
       }
-      main {
-          margin-top: -4rem;
+      header {
+          margin-top: -11%;
           padding: 0 1rem;
       }
       #photo {
-          width: 20%;
+          width: 23%;
           border-radius: 50%;
           border: 4px white solid;
+      }
+      .icon {
+          width: 21px;
+          height: 21px;
+          opacity: 0.7;
       }
   </style>
 </head>
 <body class="col-6 border-start border-end">
-<img id="banner" src="<?php echo "media/$target/" . str_replace('/', '_', $u['banner']) . '.jfif' ?>">
-<main>
-  <img id="photo" src="<?php echo "media/$target/" . str_replace('/', '_', $u['photo']) ?>">
+<img id="banner" src="<?php echo "media/$uid/" . str_replace('/', '_', $u['banner']) . '.jfif' ?>">
+<header class="border-bottom">
+  <img id="photo" src="<?php echo "media/$uid/" . str_replace('/', '_', $u['photo']) ?>">
 
-  <h2><?php echo "{$u['name']}"; ?></h2>
-  <h4><?php echo "@{$u['user']}"; ?></h4>
+  <p class="fs-3 fw-bold mb-0 mt-2"><?php echo "{$u['name']}"; ?></p>
+  <p class="fs-6 text-body-secondary"><?php echo "@{$u['user']}"; ?></p>
 
-</main>
+  <p class="fs-6 mb-2"><?php echo "{$u['description']}" ?></p>
+  <p class="fs-6 mb-2 text-body-secondary">
+      <?php if ($u['location'] != null) : ?>
+        <img class="icon" src="icons/location.svg">
+          <?php echo $u['location'] ?>
+        &nbsp;&nbsp;&nbsp;
+      <?php endif; ?>
+      <?php if ($u['link'] != null) : ?>
+        <img class="icon" src="icons/link.svg">
+        <a href="<?php echo $u['link'] ?>" target="_blank">
+            <?php echo str_replace('https://', '', $u['link']) ?></a>
+        &nbsp;&nbsp;&nbsp;
+      <?php endif; ?>
+    <img class="icon" src="icons/date.svg">
+    Joined <?php echo date('j F Y, G:i:s', $u['created_at']) ?>
+  </p>
+
+  <p class="text-body-secondary">
+    <span class="text-body fw-semibold"><?php echo "{$u['following']}" ?></span> Following
+    &nbsp;&nbsp;&nbsp;
+    <span class="text-body fw-semibold"><?php echo "{$u['followers']}" ?></span> Followers
+  </p>
+</header>
 </body>
 </html>
