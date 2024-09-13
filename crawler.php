@@ -11,7 +11,7 @@ $maxEntries = 0; // entries not tweets; set to 0 in order to turn it off.
 $wait = 10;
 
 # modules
-$db = new Database($target);
+$db = new Database($target, true);
 $api = new API();
 
 # constants

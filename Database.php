@@ -9,10 +9,12 @@ class Database {
 
     private SQLite3 $db;
 
-    function __construct(string $userId) {
+    function __construct(string $userId, bool $createIfNotExists = false) {
         $dbDir = 'databases';
         if (!file_exists($dbDir)) mkdir($dbDir);
         $preExisting = file_exists("$dbDir/$userId.db");
+        if (!$preExisting && !$createIfNotExists) return;
+
         $this->db = new SQLite3("$dbDir/$userId.db");
         if (!$preExisting) $this->createTables();
     }
@@ -147,6 +149,10 @@ EOF
         $q->bindValue(12, $pinned_t);
         $q->bindValue(13, $id);
         $q->execute();
+    }
+
+    function queryUser(string $id): array|false {
+        return $this->db->query("SELECT * FROM User WHERE id = $id")->fetchArray();
     }
 
     function insertTweet(
