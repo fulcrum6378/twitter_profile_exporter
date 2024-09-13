@@ -9,8 +9,11 @@ $uid = $_GET['user'];
 $u = $db->queryUser($uid);
 if (!$u) die("Unknown user ID: $uid");
 
+# constants
+$rtl = ['fa', 'ar', 'he'];
+
 ?><!DOCTYPE html>
-<html lang="">
+<html lang="" dir="ltr">
 <head>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#1DA1F2">
@@ -29,9 +32,11 @@ if (!$u) die("Unknown user ID: $uid");
       #banner {
           width: 100%;
       }
+      header, article {
+          padding: 1rem 1rem;
+      }
       header {
           margin-top: -11%;
-          padding: 0 1rem;
       }
       #photo {
           width: 23%;
@@ -76,5 +81,29 @@ if (!$u) die("Unknown user ID: $uid");
     <span class="text-body fw-semibold"><?php echo "{$u['followers']}" ?></span> Followers
   </p>
 </header>
+
+<nav>
+  <ul class="nav nav-tabs">
+    <li class="nav-item">
+      <a class="nav-link active" aria-current="page" href="#">Tweets</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#">Replies</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="#">Media</a>
+    </li>
+  </ul>
+</nav>
+
+<main>
+    <?php
+    $results = $db->queryTweets($uid, $_GET['section']);
+    while ($twt = $results->fetchArray()) : ?>
+      <article class="border-bottom" dir="<?php echo (in_array($twt['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
+          <?php echo $twt['text'] ?>
+      </article>
+    <?php endwhile; ?>
+</main>
 </body>
 </html>

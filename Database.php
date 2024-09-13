@@ -152,7 +152,7 @@ EOF
     }
 
     function queryUser(string $id): array|false {
-        return $this->db->query("SELECT * FROM User WHERE id = $id")->fetchArray();
+        return $this->db->query("SELECT * FROM User WHERE id = $id LIMIT 1")->fetchArray();
     }
 
     function insertTweet(
@@ -178,6 +178,22 @@ EOF
         $q->bindValue(8, $retweet_of);
         $q->bindValue(9, $is_quote ? 1 : 0);
         $q->execute();
+    }
+
+    function queryTweets(
+        string $user,
+        ?int   $section = 0,
+        int    $limit = 100,
+        int    $offset = 0
+    ): false|SQLite3Result {
+        $sectionClause = match ($section) {
+            1 => "",
+            2 => "AND media IS NOT NULL",
+            default => "AND reply IS NULL ",
+        };
+        return $this->db->query(
+            "SELECT * FROM Tweet WHERE user = $user $sectionClause ORDER BY time DESC LIMIT $limit OFFSET $offset"
+        );
     }
 
     function insertTweetStat(
