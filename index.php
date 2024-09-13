@@ -5,8 +5,10 @@ require 'Database.php';
 # $_GET
 $target = '1754604672583913472';
 $section = ProfileSection::Replies;
-$maxEntries = 100; // not maxTweets; set to 0 in order to turn it off.
-$useCache = true; // if false, it cancels the operation if one duplicate main tweet is found.
+$maxEntries = 0; // entries not tweets; set to 0 in order to turn it off.
+$useCache = true;
+$updateOnly = false;
+$wait = 10;
 
 # modules
 $db = new Database($target);
@@ -24,25 +26,32 @@ $cursor = null;
 $iFetch = 1;
 $parsedTweetsCount = 0;
 $parsedUsers = array();
+$iTarget = intval($target);
 while (!$ended) {
     $cacheFile = "$cacheDir/$iFetch.json";
-    $doUseCache = $useCache && file_exists($cacheFile);
-    $j = fopen($cacheFile, $doUseCache ? 'r' : 'w');
-    if (!$doUseCache) {
-        $res = $api->userTweets($section, $target, $cursor);
-        if ($res == "") {
-            fclose($j);
-            unlink($cacheFile);
-            die("Couldn't fetch tweets!");
-        } else
-            echo "Fetched page $iFetch.\n";
-        fwrite($j, $res);
-    } else {
-        $res = fread($j, filesize($cacheFile));
-        echo "Using cached page $iFetch.\n";
-    }
-    fclose($j);
+    $cacheExists = file_exists($cacheFile);
+    $doFetch = !$useCache || !$cacheExists;
 
+    # fetch tweets from the Twitter/X API
+    if ($doFetch) {
+        $res = $api->userTweets($section, $target, $cursor);
+        if ($res == "") die("Couldn't fetch tweets!");
+        else echo "Fetched page $iFetch\n";
+    }
+
+    if ($useCache) {
+        $j = fopen($cacheFile, $cacheExists ? 'r' : 'w');
+        if (!$cacheExists)
+            /** @noinspection PhpUndefinedVariableInspection (true negative) */
+            fwrite($j, $res);
+        else {
+            $res = fread($j, filesize($cacheFile));
+            echo "Using cached page $iFetch\n";
+        }
+        fclose($j);
+    }
+
+    /** @noinspection PhpUndefinedVariableInspection (true negative) */
     foreach (json_decode($res)->data->user->result->timeline_v2->timeline->instructions as $instruction) {
         switch ($instruction->type) {
             case 'TimelinePinEntry':
@@ -55,7 +64,7 @@ while (!$ended) {
                 }
                 foreach ($instruction->entries as $entry) {
                     $ret = parseEntry($entry);
-                    if (!$ret && !$useCache) return;
+                    if (!$ret && $updateOnly) return;
                 }
                 break;
         }
@@ -65,6 +74,11 @@ while (!$ended) {
         }
     }
     $iFetch++;
+
+    if ($doFetch && !$ended) {
+        echo "Waiting $wait seconds in order not to be detected as a bot...\n";
+        sleep($wait);
+    }
 }
 
 function parseEntry(stdClass $entry): bool {
@@ -87,14 +101,17 @@ function parseEntry(stdClass $entry): bool {
     return $ret;
 }
 
-function parseTweet(stdClass $tweet): bool {
-    global $db, $target, $parsedUsers, $twimgImages, $twimgBanners;
+function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
+    if (!property_exists($tweet, 'rest_id')) return true; // TweetTombstone
+    global $db, $parsedUsers, $twimgImages, $twimgBanners, $iTarget;
     $tweetId = intval($tweet->rest_id);
 
     # User
     $userId = intval($tweet->core->user_results->result->rest_id);
     if (!in_array($userId, $parsedUsers)) {
         $ul = $tweet->core->user_results->result->legacy;
+        $userExistsInDb = $db->checkIfRowExists($db->User, $userId);
+        if (!$userExistsInDb) echo "Processing user @$ul->screen_name (id:$userId)\n";
         $link = property_exists($ul, 'url') ? $ul->entities->url->urls[0]->expanded_url : null;
         $pinnedTweet = (count($ul->pinned_tweet_ids_str) > 0) ? $ul->pinned_tweet_ids_str[0] : null;
 
@@ -112,7 +129,7 @@ function parseTweet(stdClass $tweet): bool {
             $banner = null;
 
         # insert/update User
-        if (!$db->checkIfRowExists($db->User, $userId))
+        if (!$userExistsInDb)
             $db->insertUser($userId,
                 $ul->screen_name, $ul->name, $ul->description,
                 strtotime($ul->created_at), $ul->location, $photo, $banner, $link,
@@ -138,11 +155,12 @@ function parseTweet(stdClass $tweet): bool {
             $tweet->legacy->reply_count,
             $tweet->legacy->retweet_count,
             property_exists($tweet->views, 'count') ? intval($tweet->views->count) : null);
-        return !($userId == intval($target));
+        return !($userId == $iTarget);
     }
 
 
-    echo "Processing tweet $tweetId.\n";
+    echo "Processing tweet $tweetId\n";
+    $important = $userId == $iTarget || $retweetFromUser == $iTarget;
 
     # main text
     $text = $tweet->legacy->full_text;
@@ -157,12 +175,13 @@ function parseTweet(stdClass $tweet): bool {
     $is_quote = false;
     if (property_exists($tweet->legacy, 'retweeted_status_result')) {
         $retweet_of = intval($tweet->legacy->retweeted_status_result->result->rest_id);
-        parseTweet($tweet->legacy->retweeted_status_result->result); // ignore the result
+        parseTweet($tweet->legacy->retweeted_status_result->result, $userId); // ignore the returned value
     }
     if (property_exists($tweet, 'quoted_status_result')) {
-        $retweet_of = intval($tweet->quoted_status_result->result->rest_id);
+        $retweet_of = intval($tweet->legacy->quoted_status_id_str);
         $is_quote = true;
-        parseTweet($tweet->quoted_status_result->result); // ignore the result
+        if (property_exists($tweet->quoted_status_result, 'result'))
+            parseTweet($tweet->quoted_status_result->result, $userId); // ignore the returned value
     }
 
     # insert Media(s) and download file(s) if it's not a retweet
@@ -175,7 +194,10 @@ function parseTweet(stdClass $tweet): bool {
         $medId = intval($med->id_str);
         $medUrl = match ($med->type) {
             'photo' => $med->media_url_https,
-            'video' => end($med->video_info->variants)->url,
+            'video' => $important
+                ? end($med->video_info->variants)->url
+                : $med->video_info->variants[1]->url,
+            'animated_gif' => $med->video_info->variants[0]->url,
             default => die("Unknown media type: $med->type ($med->id_str)"),
         };
         $medUrlPath = explode('.', explode('?', $medUrl, 2)[0]);
@@ -225,11 +247,11 @@ function download(string $url, string $fileName, int $user): bool {
         mkdir($mediaDir, recursive: true);
         $res = false;
     } else
-        $res = file_exists("$mediaDir/$fileName");
+        $res = file_exists("$mediaDir/$fileName") && filesize("$mediaDir/$fileName") > 0;
 
     $retryCount = 0;
     while (!$res) {
-        if ($retryCount == 0) echo "Downloading $url.\n";
+        if ($retryCount == 0) echo "Downloading $url\n";
         $file = fopen("$mediaDir/$fileName", 'w');
         $curl = curl_init();
         curl_setopt_array($curl, array(
