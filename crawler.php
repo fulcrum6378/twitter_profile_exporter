@@ -2,12 +2,12 @@
 require 'API.php';
 require 'Database.php';
 
-# $_GET
+# $_POST
 $target = '1754604672583913472';
 $section = ProfileSection::Replies;
-$maxEntries = 0; // entries not tweets; set to 0 in order to turn it off.
-$useCache = true;
+$useCache = false;
 $updateOnly = false;
+$maxEntries = 0; // entries not tweets; set to 0 in order to turn it off.
 $wait = 10;
 
 # modules
@@ -59,7 +59,7 @@ while (!$ended) {
                 break;
             case 'TimelineAddEntries':
                 if (count($instruction->entries) <= 2) {
-                    unlink($cacheFile);
+                    if ($useCache) unlink($cacheFile);
                     $ended = true;
                 }
                 foreach ($instruction->entries as $entry) {
@@ -68,7 +68,7 @@ while (!$ended) {
                 }
                 break;
         }
-        if ($maxEntries != 0 && $parsedTweetsCount >= $maxEntries) {
+        if ($maxEntries > 0 && $parsedTweetsCount >= $maxEntries) {
             $ended = true;
             break;
         }
@@ -76,7 +76,7 @@ while (!$ended) {
     $iFetch++;
 
     if ($doFetch && !$ended) {
-        echo "Waiting $wait seconds in order not to be detected as a bot...\n";
+        echo "Waiting in order not to be detected as a bot ($wait seconds)...\n";
         sleep($wait);
     }
 }

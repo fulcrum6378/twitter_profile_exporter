@@ -8,7 +8,7 @@ class API {
 
     function __construct() {
         # parse the intercepted headers
-        foreach (json_decode(file_get_contents('headers_twitter.json')) as $key => $value)
+        foreach (json_decode(file_get_contents('headers.json')) as $key => $value)
             $this->headers[] = $key . ': ' . $value;
 
         /** @noinspection SpellCheckingInspection */
