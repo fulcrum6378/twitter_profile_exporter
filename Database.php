@@ -66,9 +66,9 @@ class Database {
     CREATE TABLE $this->Media
     (
         id INT PRIMARY KEY     NOT NULL,
-        file           TEXT    NOT NULL,
+        ext            TEXT    NOT NULL,
+        url            TEXT    NOT NULL,
         tweet          INT     NOT NULL,
-        pos            INT     NOT NULL DEFAULT(0),
         FOREIGN KEY (tweet)    REFERENCES Tweet(id)
     );
 EOF
@@ -218,15 +218,15 @@ EOF
 
     function insertMedia(
         int    $id,
-        string $file,
+        string $ext,
+        string $url,
         int    $tweet,
-        int    $pos,
     ): void {
-        $q = $this->db->prepare('INSERT INTO Media (id, file, tweet, pos) VALUES(?, ?, ?, ?)');
+        $q = $this->db->prepare('INSERT INTO Media (id, ext, url, tweet) VALUES(?, ?, ?, ?)');
         $q->bindValue(1, $id);
-        $q->bindValue(2, $file);
-        $q->bindValue(3, $tweet);
-        $q->bindValue(4, $pos);
+        $q->bindValue(2, $ext);
+        $q->bindValue(3, $url);
+        $q->bindValue(4, $tweet);
         $q->execute();
     }
 

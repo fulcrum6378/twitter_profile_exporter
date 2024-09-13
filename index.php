@@ -4,7 +4,7 @@ require 'Database.php';
 
 # $_GET
 $target = '1754604672583913472';
-$maxTweets = 10;
+$maxTweets = 100;
 $useCache = true;
 
 # modules
@@ -14,16 +14,10 @@ $api = new API();
 # constants
 $twimgImages = 'https://pbs.twimg.com/profile_images/';
 $twimgBanners = 'https://pbs.twimg.com/profile_banners/';
-$twimgMedia = 'https://pbs.twimg.com/media/';
-$maxRetry = 3;
-
-# create necessary directories
-$cacheDir = "cache/$target";
-if (!file_exists($cacheDir)) mkdir($cacheDir, recursive: true);
-$mediaDir = "media/$target";
-if (!file_exists($mediaDir)) mkdir($mediaDir, recursive: true);
 
 # loop on consecutive requests
+$cacheDir = "cache/$target";
+if (!file_exists($cacheDir)) mkdir($cacheDir, recursive: true);
 $ended = false;
 $cursor = null;
 $iFetch = 1;
@@ -39,7 +33,8 @@ while (!$ended) {
             fclose($j);
             unlink($cacheFile);
             die("Couldn't fetch tweets!");
-        }
+        } else
+            echo "Fetched page $iFetch.\n";
         fwrite($j, $res);
     } else
         $res = fread($j, filesize($cacheFile));
@@ -82,17 +77,30 @@ function parseEntry(stdClass $entry): void {
 }
 
 function parseTweet(stdClass $tweet): void {
-    global $db, $maxRetry, $mediaDir, $parsedUsers, $twimgImages, $twimgBanners, $twimgMedia;
+    global $db, $parsedUsers, $twimgImages, $twimgBanners;
     $tweetId = intval($tweet->rest_id);
 
     # User
     $userId = intval($tweet->core->user_results->result->rest_id);
     if (!in_array($userId, $parsedUsers)) {
         $ul = $tweet->core->user_results->result->legacy;
-        $photo = str_replace('_normal', '', substr($ul->profile_image_url_https, strlen($twimgImages)));
-        $banner = substr($ul->profile_banner_url, strlen($twimgBanners));
         $link = property_exists($ul, 'url') ? $ul->entities->url->urls[0]->expanded_url : null;
         $pinnedTweet = (count($ul->pinned_tweet_ids_str) > 0) ? $ul->pinned_tweet_ids_str[0] : null;
+
+        # process user images
+        if (property_exists($ul, 'profile_image_url_https')) {
+            $photo = str_replace('_normal', '',
+                substr($ul->profile_image_url_https, strlen($twimgImages)));
+            download($ul->profile_image_url_https, str_replace('/', '_', $photo), $userId);
+        } else
+            $photo = null;
+        if (property_exists($ul, 'profile_banner_url')) {
+            $banner = substr($ul->profile_banner_url, strlen($twimgBanners));
+            download($ul->profile_banner_url, str_replace('/', '_', $banner) . '.jfif', $userId);
+        } else
+            $banner = null;
+
+        # insert/update User
         if (!$db->checkIfRowExists($db->User, $userId))
             $db->insertUser($userId,
                 $ul->screen_name, $ul->name, $ul->description,
@@ -144,33 +152,32 @@ function parseTweet(stdClass $tweet): void {
         parseTweet($tweet->quoted_status_result->result);
     }
 
-    # insert Media(s) and download file(s)
+    # insert Media(s) and download file(s) if it's not a retweet
     $media = null;
-    $iMed = 0;
-    if (property_exists($tweet->legacy->entities, 'media')) foreach ($tweet->legacy->entities->media as $med) {
+    if (property_exists($tweet->legacy->entities, 'media') &&
+        ($retweet_of == null || $is_quote)
+    ) foreach ($tweet->legacy->entities->media as $med) {
         if ($media == null) $media = $med->id_str;
         else $media .= $med->id_str;
         $medId = intval($med->id_str);
-        $fileName = substr($med->media_url_https, strlen($twimgMedia));
+        $medUrl = match ($med->type) {
+            'photo' => $med->media_url_https,
+            'video' => end($med->video_info->variants)->url,
+            default => die("Unknown media type: $med->type ($med->id_str)"),
+        };
+        $medUrlPath = explode('.', explode('?', $medUrl, 2)[0]);
+        $medExt = end($medUrlPath);
 
         # insert a reference into the database
-        $db->insertMedia($medId, $fileName, $tweetId, $iMed);
+        $db->insertMedia($medId, $medExt, $medUrl, $tweetId);
 
         # download
-        $dlRes = file_exists("$mediaDir/$fileName");
-        $retryCount = 0;
-        while (!$dlRes) {
-            $dlRes = download($med->media_url_https, "$mediaDir/$fileName");
-            if (!$dlRes) {
-                $retryCount++;
-                if ($retryCount >= $maxRetry) {
-                    echo "Couldn't download $med->media_url_https\n";
-                    break;
-                } else
-                    echo "Retrying for media...\n";
-            }
+        try {
+            download($medUrl, "$medId.$medExt", $userId);
+        } catch (TypeError $e) {
+            echo $e;
+            die("\n$tweetId");
         }
-        $iMed++;
 
         # remove the link from the main text
         $text = str_replace($med->url, '', $text);
@@ -196,18 +203,37 @@ function parseTweet(stdClass $tweet): void {
         property_exists($tweet->views, 'count') ? intval($tweet->views->count) : null);
 }
 
-function download(string $url, string $store): bool {
-    $file = fopen($store, 'w');
-    $curl = curl_init();
-    curl_setopt_array($curl, array(
-        CURLOPT_URL => $url,
-        CURLOPT_FILE => $file,
-        CURLOPT_PROXY => '127.0.0.1:8580',
-        CURLOPT_SSL_VERIFYPEER => 0,
-        CURLOPT_TIMEOUT => 60,
-    ));
-    $res = curl_exec($curl);
-    curl_close($curl);
-    fclose($file);
-    return $res == 1;
+function download(string $url, string $fileName, int $user): bool {
+    $mediaDir = "media/$user";
+    if (!file_exists($mediaDir)) {
+        mkdir($mediaDir, recursive: true);
+        $res = false;
+    } else
+        $res = file_exists("$mediaDir/$fileName");
+
+    $retryCount = 0;
+    while (!$res) {
+        $file = fopen("$mediaDir/$fileName", 'w');
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $url,
+            CURLOPT_FILE => $file,
+            CURLOPT_PROXY => '127.0.0.1:8580',
+            CURLOPT_SSL_VERIFYPEER => 0,
+            CURLOPT_TIMEOUT => 60,
+        ));
+        $res = curl_exec($curl) == 1;
+        curl_close($curl);
+        fclose($file);
+
+        if (!$res) {
+            $retryCount++;
+            if ($retryCount >= 3) {
+                echo "Couldn't download $url\n";
+                return false;
+            } else
+                echo "Retrying for media... ($url)\n";
+        }
+    }
+    return true;
 }
