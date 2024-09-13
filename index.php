@@ -4,8 +4,9 @@ require 'Database.php';
 
 # $_GET
 $target = '1754604672583913472';
-$maxTweets = 100;
-$useCache = true;
+$section = ProfileSection::Replies;
+$maxEntries = 100; // not maxTweets; set to 0 in order to turn it off.
+$useCache = true; // if false, it cancels the operation if one duplicate main tweet is found.
 
 # modules
 $db = new Database($target);
@@ -28,7 +29,7 @@ while (!$ended) {
     $doUseCache = $useCache && file_exists($cacheFile);
     $j = fopen($cacheFile, $doUseCache ? 'r' : 'w');
     if (!$doUseCache) {
-        $res = $api->userTweets(ProfileSection::Tweets, $target, $cursor);
+        $res = $api->userTweets($section, $target, $cursor);
         if ($res == "") {
             fclose($j);
             unlink($cacheFile);
@@ -36,8 +37,10 @@ while (!$ended) {
         } else
             echo "Fetched page $iFetch.\n";
         fwrite($j, $res);
-    } else
+    } else {
         $res = fread($j, filesize($cacheFile));
+        echo "Using cached page $iFetch.\n";
+    }
     fclose($j);
 
     foreach (json_decode($res)->data->user->result->timeline_v2->timeline->instructions as $instruction) {
@@ -46,13 +49,17 @@ while (!$ended) {
                 parseEntry($instruction->entry);
                 break;
             case 'TimelineAddEntries':
-                if (count($instruction->entries) <= 2)
+                if (count($instruction->entries) <= 2) {
+                    unlink($cacheFile);
                     $ended = true;
-                foreach ($instruction->entries as $entry)
-                    parseEntry($entry);
+                }
+                foreach ($instruction->entries as $entry) {
+                    $ret = parseEntry($entry);
+                    if (!$ret && !$useCache) return;
+                }
                 break;
         }
-        if ($parsedTweetsCount >= $maxTweets) {
+        if ($maxEntries != 0 && $parsedTweetsCount >= $maxEntries) {
             $ended = true;
             break;
         }
@@ -60,24 +67,28 @@ while (!$ended) {
     $iFetch++;
 }
 
-function parseEntry(stdClass $entry): void {
+function parseEntry(stdClass $entry): bool {
     global $cursor, $parsedTweetsCount;
+
     if (str_starts_with($entry->entryId, 'who-to-follow') ||
-        str_starts_with($entry->entryId, 'cursor-top')) return;
+        str_starts_with($entry->entryId, 'cursor-top')) return true;
     if (str_starts_with($entry->entryId, 'cursor-bottom')) {
         $cursor = $entry->content->value;
-        return;
+        return true;
     }
 
+    $ret = true;
     if (property_exists($entry->content, 'itemContent'))
-        parseTweet($entry->content->itemContent->tweet_results->result);
+        $ret = parseTweet($entry->content->itemContent->tweet_results->result);
     else foreach ($entry->content->items as $item)
-        parseTweet($item->item->itemContent->tweet_results->result);
+        $ret = parseTweet($item->item->itemContent->tweet_results->result);
+
     $parsedTweetsCount++;
+    return $ret;
 }
 
-function parseTweet(stdClass $tweet): void {
-    global $db, $parsedUsers, $twimgImages, $twimgBanners;
+function parseTweet(stdClass $tweet): bool {
+    global $db, $target, $parsedUsers, $twimgImages, $twimgBanners;
     $tweetId = intval($tweet->rest_id);
 
     # User
@@ -89,9 +100,9 @@ function parseTweet(stdClass $tweet): void {
 
         # process user images
         if (property_exists($ul, 'profile_image_url_https')) {
-            $photo = str_replace('_normal', '',
-                substr($ul->profile_image_url_https, strlen($twimgImages)));
-            download($ul->profile_image_url_https, str_replace('/', '_', $photo), $userId);
+            $photoUrl = str_replace('_normal', '', $ul->profile_image_url_https);
+            $photo = substr($photoUrl, strlen($twimgImages));
+            download($photoUrl, str_replace('/', '_', $photo), $userId);
         } else
             $photo = null;
         if (property_exists($ul, 'profile_banner_url')) {
@@ -127,9 +138,11 @@ function parseTweet(stdClass $tweet): void {
             $tweet->legacy->reply_count,
             $tweet->legacy->retweet_count,
             property_exists($tweet->views, 'count') ? intval($tweet->views->count) : null);
-        return;
+        return !($userId == intval($target));
     }
 
+
+    echo "Processing tweet $tweetId.\n";
 
     # main text
     $text = $tweet->legacy->full_text;
@@ -144,12 +157,12 @@ function parseTweet(stdClass $tweet): void {
     $is_quote = false;
     if (property_exists($tweet->legacy, 'retweeted_status_result')) {
         $retweet_of = intval($tweet->legacy->retweeted_status_result->result->rest_id);
-        parseTweet($tweet->legacy->retweeted_status_result->result);
+        parseTweet($tweet->legacy->retweeted_status_result->result); // ignore the result
     }
     if (property_exists($tweet, 'quoted_status_result')) {
         $retweet_of = intval($tweet->quoted_status_result->result->rest_id);
         $is_quote = true;
-        parseTweet($tweet->quoted_status_result->result);
+        parseTweet($tweet->quoted_status_result->result); // ignore the result
     }
 
     # insert Media(s) and download file(s) if it's not a retweet
@@ -158,7 +171,7 @@ function parseTweet(stdClass $tweet): void {
         ($retweet_of == null || $is_quote)
     ) foreach ($tweet->legacy->entities->media as $med) {
         if ($media == null) $media = $med->id_str;
-        else $media .= $med->id_str;
+        else $media .= ',' . $med->id_str;
         $medId = intval($med->id_str);
         $medUrl = match ($med->type) {
             'photo' => $med->media_url_https,
@@ -201,9 +214,12 @@ function parseTweet(stdClass $tweet): void {
         $tweet->legacy->reply_count,
         $tweet->legacy->retweet_count,
         property_exists($tweet->views, 'count') ? intval($tweet->views->count) : null);
+
+    return true;
 }
 
 function download(string $url, string $fileName, int $user): bool {
+    # ensure existence of itself and its directory
     $mediaDir = "media/$user";
     if (!file_exists($mediaDir)) {
         mkdir($mediaDir, recursive: true);
@@ -213,6 +229,7 @@ function download(string $url, string $fileName, int $user): bool {
 
     $retryCount = 0;
     while (!$res) {
+        if ($retryCount == 0) echo "Downloading $url.\n";
         $file = fopen("$mediaDir/$fileName", 'w');
         $curl = curl_init();
         curl_setopt_array($curl, array(
