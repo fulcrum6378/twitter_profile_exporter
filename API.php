@@ -2,9 +2,10 @@
 
 /** Requires the `curl` extension to be enabled. */
 class API {
+    private const string BASE_URL = 'https://x.com/i/api/graphql/';
+
     private array $headers = array();
     private string $featuresAndFieldToggles;
-    private string $baseUrl = 'https://x.com/i/api/graphql/';
 
     function __construct() {
         # parse the intercepted headers
@@ -63,7 +64,7 @@ class API {
     function userTweets(ProfileSection $sect, string $userId, string $cursor = null, int $count = 20): string {
         $medOrLikes = $sect == ProfileSection::Media || $sect == ProfileSection::Likes;
         /** @noinspection SpellCheckingInspection */
-        return $this->get($this->baseUrl .
+        return $this->get(API::BASE_URL .
             match ($sect) {
                 ProfileSection::Tweets => 'E3opETHurmVJflFsUBVuUQ/UserTweets',
                 ProfileSection::Replies => 'bt4TKuFz4T7Ckk-VvQVSow/UserTweetsAndReplies',

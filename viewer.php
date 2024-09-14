@@ -1,17 +1,22 @@
 <?php
-require 'Database.php';
 
+# target database
+if (!isset($_GET['t'])) die("No target detected!");
 $target = '1754604672583913472';
+require 'Database.php';
 $db = new Database($target);
 
-if (!isset($_GET['u'])) die("No user ID detected!");
-$uid = $_GET['u'];
+# user
+$uid = $_GET['u'] ?? $target;
 $u = $db->queryUser($uid);
 if (!$u) die("Unknown user ID: $uid");
+
+# other parameters
 $section = isset($_GET['section']) ? intval($_GET['section']) : 0;
 
-# constants
+# miscellaneous
 $rtl = ['fa', 'ar', 'he'];
+date_default_timezone_set("Asia/Tehran");
 
 ?><!DOCTYPE html>
 <html lang="" dir="ltr">
@@ -32,8 +37,10 @@ $rtl = ['fa', 'ar', 'he'];
 <img id="banner" src="<?php echo "media/$target/$uid/" .
     str_replace('/', '_', $u['banner']) . '.jfif' ?>">
 <header>
-  <img id="photo" src="<?php echo "media/$target/$uid/" .
-      str_replace('/', '_', $u['photo']) ?>">
+  <figure>
+    <img id="photo" src="<?php echo "media/$target/$uid/" .
+        str_replace('/', '_', $u['photo']) ?>">
+  </figure>
 
   <p class="fs-3 fw-bold mb-0 mt-2"><?php echo "{$u['name']}"; ?></p>
   <p class="fs-6 text-body-secondary"><?php echo "@{$u['user']}"; ?></p>
@@ -52,7 +59,7 @@ $rtl = ['fa', 'ar', 'he'];
         &nbsp;&nbsp;&nbsp;
       <?php endif; ?>
     <img class="icon" src="frontend/icons/date.svg">
-    Joined <?php echo date('j F Y, G:i:s', $u['created_at']) ?>
+    Joined <?php echo date('j F Y, H:i:s', $u['created_at']) ?>
   </p>
 
   <p class="text-body-secondary">
@@ -86,6 +93,7 @@ $rtl = ['fa', 'ar', 'he'];
       </article>
     <?php endwhile; ?>
 </main>
+
 <script type="text/javascript" src="frontend/viewer.js"></script>
 </body>
 </html>

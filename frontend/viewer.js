@@ -1,3 +1,5 @@
+$('header').css('margin-top', '-' + $("figure").height() / 2 + 'px')
+
 function restoreSucceedingGetParams(px) {
     let after = location.search.substring(px)
     if (after.includes('&'))

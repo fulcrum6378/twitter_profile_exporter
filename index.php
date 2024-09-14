@@ -1,10 +1,9 @@
 <?php
 
-$fConfig = 'config.json';
-$jConfig = file_exists('config.json')
-    ? file_get_contents($fConfig)
-    : '{targets:[]}';
-$config = json_decode($jConfig);
+require 'config.php';
+$config = readConfig();
+
+date_default_timezone_set("Asia/Tehran");
 
 ?><!DOCTYPE html>
 <html lang="" dir="ltr">
@@ -28,16 +27,20 @@ $config = json_decode($jConfig);
     <th>ID</th>
     <th>Name</th>
     <th>Last Sync</th>
-    <th>View</th>
+    <th>Actions</th>
   </tr>
   </thead>
   <tbody>
-  <?php foreach ($config->targets as $target) : ?>
+  <?php foreach ($config as $id => $u) : ?>
     <tr>
-      <td><?php echo $target->id ?></td>
-      <td><?php echo $target->name ?></td>
-      <td><?php echo $target->last ?></td>
-      <td><a href="viewer.php?u=<?php echo $target->id ?>">GO</a></td>
+      <td><?php echo $id ?></td>
+      <td><?php echo $u['name'] ?></td>
+      <td><?php echo date('Y/m/j H:i', $u['last']) ?></td>
+      <td>
+        <a href="viewer.php?t=<?php echo $id ?>">View</a>
+        &nbsp;
+        <a href="crawler.php?t=<?php echo $id ?>" class="sync">Sync</a>
+      </td>
     </tr>
   <?php endforeach; ?>
   </tbody>

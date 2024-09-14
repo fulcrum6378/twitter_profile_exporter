@@ -2,21 +2,28 @@
 require 'API.php';
 require 'Database.php';
 
-# $_POST
-$target = '1754604672583913472';
-$section = ProfileSection::Replies;
-$useCache = false;
-$updateOnly = true;
-$maxEntries = 0; // entries not tweets; set to 0 in order to turn it off.
-$wait = 10;
+// TODO strtotime() can potentially produce wrong timestamps on the server!
+
+# settings
+$target = $_GET['t'] ?? '1754604672583913472';
+$section = isset($_GET['section']) ? match ($_GET['section']) {
+    '0' => ProfileSection::Tweets,
+    '2' => ProfileSection::Media,
+    default => ProfileSection::Replies
+} : ProfileSection::Replies;
+$useCache = isset($_GET['use_cache']) && $_GET['use_cache'] == '1';
+$updateOnly = !isset($_GET['update_only']) || $_GET['update_only'] == '1';
+/** entries not tweets; set to 0 in order to turn it off. */
+$maxEntries = isset($_GET['max_entries']) ? intval($_GET['max_entries']) : 0;
+$delay = isset($_GET['delay']) ? intval($_GET['delay']) : 10;
 
 # modules
 $db = new Database($target, true);
 $api = new API();
 
 # constants
-$twimgImages = 'https://pbs.twimg.com/profile_images/';
-$twimgBanners = 'https://pbs.twimg.com/profile_banners/';
+const TWIMG_IMAGES = 'https://pbs.twimg.com/profile_images/';
+const TWIMG_BANNERS = 'https://pbs.twimg.com/profile_banners/';
 
 # loop on consecutive requests
 $cacheDir = "cache/$target";
@@ -27,6 +34,7 @@ $iFetch = 1;
 $parsedTweetsCount = 0;
 $parsedUsers = array();
 $iTarget = intval($target);
+$lastSync = 0;
 while (!$ended) {
     $cacheFile = "$cacheDir/$iFetch.json";
     $cacheExists = file_exists($cacheFile);
@@ -49,7 +57,8 @@ while (!$ended) {
             echo "Using cached page $iFetch\n";
         }
         fclose($j);
-    }
+    } else
+        if ($lastSync == 0) $lastSync = time();
 
     /** @noinspection PhpUndefinedVariableInspection (true negative) */
     foreach (json_decode($res)->data->user->result->timeline_v2->timeline->instructions as $instruction) {
@@ -64,7 +73,7 @@ while (!$ended) {
                 }
                 foreach ($instruction->entries as $entry) {
                     $ret = parseEntry($entry);
-                    if (!$ret && $updateOnly) return;
+                    if (!$ret && $updateOnly) break 4;
                 }
                 break;
         }
@@ -76,8 +85,8 @@ while (!$ended) {
     $iFetch++;
 
     if ($doFetch && !$ended) {
-        echo "Waiting in order not to be detected as a bot ($wait seconds)...\n";
-        sleep($wait);
+        echo "Waiting in order not to be detected as a bot ($delay seconds)...\n";
+        sleep($delay);
     }
 }
 
@@ -103,7 +112,7 @@ function parseEntry(stdClass $entry): bool {
 
 function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
     if (!property_exists($tweet, 'rest_id')) return true; // TweetTombstone
-    global $db, $parsedUsers, $twimgImages, $twimgBanners, $iTarget;
+    global $db, $parsedUsers, $iTarget;
     $tweetId = intval($tweet->rest_id);
 
     # User
@@ -118,12 +127,12 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
         # process user images
         if (property_exists($ul, 'profile_image_url_https')) {
             $photoUrl = str_replace('_normal', '', $ul->profile_image_url_https);
-            $photo = substr($photoUrl, strlen($twimgImages));
+            $photo = substr($photoUrl, strlen(TWIMG_IMAGES));
             download($photoUrl, str_replace('/', '_', $photo), $userId);
         } else
             $photo = null;
         if (property_exists($ul, 'profile_banner_url')) {
-            $banner = substr($ul->profile_banner_url, strlen($twimgBanners));
+            $banner = substr($ul->profile_banner_url, strlen(TWIMG_BANNERS));
             download($ul->profile_banner_url, str_replace('/', '_', $banner) . '.jfif', $userId);
         } else
             $banner = null;
@@ -276,4 +285,15 @@ function download(string $url, string $fileName, int $user): bool {
         }
     }
     return true;
+}
+
+# update the config file
+if (!$useCache) {
+    require 'config.php';
+    $config = readConfig();
+    if (!array_key_exists($target, $config))
+        $config[$target] = array('name' => '', 'last' => $lastSync);
+    else
+        if ($lastSync != 0) $config[$target]['last'] = $lastSync;
+    writeConfig($config);
 }
