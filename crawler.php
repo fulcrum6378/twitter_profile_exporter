@@ -6,7 +6,7 @@ require 'Database.php';
 $target = '1754604672583913472';
 $section = ProfileSection::Replies;
 $useCache = false;
-$updateOnly = false;
+$updateOnly = true;
 $maxEntries = 0; // entries not tweets; set to 0 in order to turn it off.
 $wait = 10;
 
@@ -242,7 +242,8 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
 
 function download(string $url, string $fileName, int $user): bool {
     # ensure existence of itself and its directory
-    $mediaDir = "media/$user";
+    global $target;
+    $mediaDir = "media/$target/$user";
     if (!file_exists($mediaDir)) {
         mkdir($mediaDir, recursive: true);
         $res = false;

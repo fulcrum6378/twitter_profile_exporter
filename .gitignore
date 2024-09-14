@@ -1,5 +1,7 @@
+config.json
 headers.json
 cache/
 databases/
+frontend/bootstrap*
+frontend/jquery*
 media/
-tools/
