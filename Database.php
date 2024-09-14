@@ -182,7 +182,7 @@ EOF
 
     function queryTweets(
         string $user,
-        ?int   $section = 0,
+        int    $section = 0,
         int    $limit = 100,
         int    $offset = 0
     ): false|SQLite3Result {

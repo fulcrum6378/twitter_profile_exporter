@@ -8,16 +8,10 @@ if (!isset($_GET['u'])) die("No user ID detected!");
 $uid = $_GET['u'];
 $u = $db->queryUser($uid);
 if (!$u) die("Unknown user ID: $uid");
+$section = isset($_GET['section']) ? intval($_GET['section']) : 0;
 
 # constants
 $rtl = ['fa', 'ar', 'he'];
-
-/*
-http://localhost:290/viewer.php?u=1754604672583913472
-http://localhost:290/viewer.php?u=2286930721
-https://getbootstrap.com/docs/5.3/components/navs-tabs/
-https://www.w3schools.com/jsref/prop_loc_search.asp
-*/
 
 ?><!DOCTYPE html>
 <html lang="" dir="ltr">
@@ -37,7 +31,7 @@ https://www.w3schools.com/jsref/prop_loc_search.asp
 <body class="col-6 border-start border-end">
 <img id="banner" src="<?php echo "media/$target/$uid/" .
     str_replace('/', '_', $u['banner']) . '.jfif' ?>">
-<header class="border-bottom">
+<header>
   <img id="photo" src="<?php echo "media/$target/$uid/" .
       str_replace('/', '_', $u['photo']) ?>">
 
@@ -68,28 +62,30 @@ https://www.w3schools.com/jsref/prop_loc_search.asp
   </p>
 </header>
 
-<nav>
-  <ul class="nav nav-tabs">
-    <li class="nav-item">
-      <a class="nav-link active" aria-current="page" href="#">Tweets</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="#">Replies</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link" href="#">Media</a>
-    </li>
-  </ul>
+<nav class="text-center navbar border-top border-bottom fs-5">
+  <div class="col nav-item">
+    <a class="nav-link<?php if ($section == 0) echo ' fw-bold' ?>"
+       href="javascript:void(0)" id="tweets">Tweets</a>
+  </div>
+  <div class="col nav-item">
+    <a class="nav-link<?php if ($section == 1) echo ' fw-bold' ?>"
+       href="javascript:void(0)" id="replies">Replies</a>
+  </div>
+  <div class="col nav-item">
+    <a class="nav-link<?php if ($section == 2) echo ' fw-bold' ?>"
+       href="javascript:void(0)" id="media">Media</a>
+  </div>
 </nav>
 
 <main>
     <?php
-    $results = $db->queryTweets($uid, $_GET['section']);
+    $results = $db->queryTweets($uid, $section);
     while ($twt = $results->fetchArray()) : ?>
       <article class="border-bottom" dir="<?php echo (in_array($twt['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
           <?php echo $twt['text'] ?>
       </article>
     <?php endwhile; ?>
 </main>
+<script type="text/javascript" src="frontend/viewer.js"></script>
 </body>
 </html>
