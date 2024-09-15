@@ -1,5 +1,31 @@
 $(document).ready(function () {
-    $('header').css('margin-top', '-' + $('figure').height() / 2 + 'px')
+    let nmt = '-' + $('figure').height() / 2 + 'px';
+    $('header').css('margin-top', nmt)
+    $('#actions').css('margin-top', nmt)
+})
+
+let syncing = false
+$('#sync').click(function () {
+    if (syncing) return
+    syncing = true
+    $(this).addClass('spinning')
+    $.ajax({
+        url: 'crawler.php?t=' + $(this).attr('data-target'),
+        cache: false,
+        dataType: 'text',
+        timeout: 5 * 60 * 1000,
+        success: function (result/*, textStatus, jqXHR*/) {
+            alert(result)
+            syncing = false
+            $('#sync').removeClass('spinning')
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+            alert(errorThrown)
+            syncing = false
+            $('#sync').removeClass('spinning')
+        }
+    });
+
 })
 
 function restoreSucceedingGetParams(px) {

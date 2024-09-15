@@ -2,18 +2,17 @@ body {
     margin: auto;
     font-family: TwitterChirp, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
+
 #banner {
     width: 100%;
 }
 header {
     padding: 0 1rem 1rem 1rem;
 }
-header figure, #photo, img.author, p.author img {
-    border-radius: 50%;
-}
 header figure {
     width: 24%;
     background-color: white;
+    border-radius: 50%;
     padding: 0.3rem;
     position: relative;
     margin-bottom: 0;
@@ -22,12 +21,29 @@ header figure {
 #photo {
     width: 100%;
     height: 100%;
+    border-radius: 50%;
 }
 header .icon {
     width: 21px;
     height: 21px;
     opacity: 0.7;
 }
+#actions {
+    float: right;
+}
+#actions img {
+    width: 48px;
+    height: 48px;
+    padding: 11px;
+    border-radius: 50%;
+}
+.spinning {
+    animation-name: spinner;
+    animation-duration: 500ms;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+}
+
 section {
     padding: 0.1rem 1rem;
     display: flex;
@@ -35,6 +51,7 @@ section {
 img.author {
     width: 3rem;
     height: 3rem;
+    border-radius: 50%;
 }
 article {
     width: calc(100% - 3rem);
@@ -81,4 +98,14 @@ p.author {
 p.author img {
     width: 2rem;
     height: 2rem;
+    border-radius: 50%;
+}
+
+@keyframes spinner {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }

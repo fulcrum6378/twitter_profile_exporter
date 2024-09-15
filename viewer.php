@@ -41,6 +41,10 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
     <img id="photo" src="media/<?= "$target/$uid/" . profilePhoto($u) ?>">
   </figure>
 
+  <div id="actions">
+    <img id="sync" class="btn btn-light border" src="frontend/icons/retweet.svg" data-target="<?= $target ?>">
+  </div>
+
   <p class="fs-3 fw-bold mb-0 mt-2"><?= "{$u['name']}"; ?></p>
   <p class="fs-6 text-body-secondary"><?= "@{$u['user']}"; ?></p>
   <p class="fs-6 mb-2"><?= "{$u['description']}" ?></p>
