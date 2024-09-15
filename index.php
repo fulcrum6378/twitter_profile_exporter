@@ -36,7 +36,7 @@ date_default_timezone_set("Asia/Tehran");
   <tr>
     <td><?= $id ?></td>
     <td><?= $u['name'] ?></td>
-    <td><?= date('Y/m/j H:i', $u['last']) ?></td>
+    <td><?= date('Y/m/d H:i:s', $u['last']) ?></td>
     <td>
       <a href="viewer.php?t=<?= $id ?>">View</a>
       &nbsp;

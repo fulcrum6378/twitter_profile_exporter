@@ -18,6 +18,10 @@ $section = isset($_GET['section']) ? intval($_GET['section']) : 0;
 $rtl = ['fa', 'ar', 'he'];
 date_default_timezone_set("Asia/Tehran");
 
+function profilePhoto(array $user): ?string {
+    return str_replace('/', '_', $user['photo']);
+}
+
 $results = $db->queryTweets($uid, $section);
 
 ?><!DOCTYPE html>
@@ -36,29 +40,28 @@ $results = $db->queryTweets($uid, $section);
   <script src="frontend/bootstrap.bundle.min.js"></script>
 </head>
 <body class="col-6 border-start border-end">
-<img id="banner" src="<?= "media/$target/$uid/" .
+<img id="banner" src="media/<?= "$target/$uid/" .
 str_replace('/', '_', $u['banner']) . '.jfif' ?>">
 <header>
   <figure>
-    <img id="photo" src="<?= "media/$target/$uid/" . str_replace('/', '_', $u['photo']) ?>">
+    <img id="photo" src="media/<?= "$target/$uid/" . profilePhoto($u) ?>">
   </figure>
 
   <p class="fs-3 fw-bold mb-0 mt-2"><?= "{$u['name']}"; ?></p>
   <p class="fs-6 text-body-secondary"><?= "@{$u['user']}"; ?></p>
-
   <p class="fs-6 mb-2"><?= "{$u['description']}" ?></p>
+
   <p class="fs-6 mb-2 text-body-secondary">
-    <?php if ($u['location'] != null) : ?>
+<?php if ($u['location'] != null) : ?>
     <img class="icon" src="frontend/icons/location.svg">
     <?= $u['location'] ?>
     &nbsp;&nbsp;&nbsp;
-    <?php endif ?>
-    <?php if ($u['link'] != null) : ?>
+<?php endif ?>
+<?php if ($u['link'] != null) : ?>
     <img class="icon" src="frontend/icons/link.svg">
     <a href="<?= $u['link'] ?>" target="_blank"><?= str_replace('https://', '', $u['link']) ?></a>
     &nbsp;&nbsp;&nbsp;
-    <?php endif ?>
-
+<?php endif ?>
     <img class="icon" src="frontend/icons/date.svg">
     Joined <?= date('j F Y, H:i:s', $u['created_at']) ?>
 
@@ -84,13 +87,32 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
 </nav>
 
 <main>
-  <?php while ($twt = $results->fetchArray()) : ?>
+<?php while ($twt = $results->fetchArray()) : ?>
   <article class="border-bottom">
-  <time><?= date('Y/m/j H:i', $twt['time']) ?></time><br>
-  <p dir="<?= (in_array($twt['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
+    <time><?= date('Y.m.d - H:i:s', $twt['time']) ?></time><br>
+<?php
+$isRetweet = $twt['retweet'] != null && $twt['is_quote'] == 0;
+if ($isRetweet) $twt = $db->queryTweet($twt['retweet']);
+?>
+<?php if ($isRetweet) : ?>
+    <time><?= date('Y.m.d - H:i:s', $twt['time']) ?></time><br>
+    <img class="userIcon" src="media/<?= "$target/{$twt['user']}/" . profilePhoto($db->queryUser($twt['user'])) ?>">
+<?php endif ?>
+    <p class="tweet" dir="<?= (in_array($twt['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
 <?= $twt['text'] ?>
 
-  </p>
+    </p>
+    <div class="media">
+<?php if ($twt['media'] != null) foreach (explode(',', $twt['media']) as $med) : ?>
+<?php $ext = $db->queryMedium($med)['ext']; if ($ext != 'mp4') : ?>
+      <img src="media/<?= "$target/{$twt['user']}/$med.$ext" ?>">
+<?php else : ?>
+      <video controls>
+        <source src="media/<?= "$target/{$twt['user']}/$med.mp4" ?>" type="video/mp4">
+      </video>
+<?php endif ?>
+<?php endforeach ?>
+    </div>
   </article>
 
 <?php endwhile ?>

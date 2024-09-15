@@ -183,8 +183,8 @@ EOF
     function queryTweets(
         string $user,
         int    $section = 0,
-        int    $limit = 100,
-        int    $offset = 0
+        int    $offset = 0,
+        int    $limit = 100
     ): false|SQLite3Result {
         $sectionClause = match ($section) {
             1 => "",
@@ -194,6 +194,10 @@ EOF
         return $this->db->query(
             "SELECT * FROM Tweet WHERE user = $user $sectionClause ORDER BY time DESC LIMIT $limit OFFSET $offset"
         );
+    }
+
+    function queryTweet(int $id): array|false {
+        return $this->db->query("SELECT * FROM Tweet WHERE id = $id LIMIT 1")->fetchArray();
     }
 
     function insertTweetStat(
@@ -250,6 +254,10 @@ EOF
         $q->bindValue(3, $url);
         $q->bindValue(4, $tweet);
         $q->execute();
+    }
+
+    function queryMedium(int $id): array|false {
+        return $this->db->query("SELECT * FROM Media WHERE id = $id LIMIT 1")->fetchArray();
     }
 
     function __destruct() {
