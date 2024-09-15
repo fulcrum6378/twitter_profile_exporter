@@ -184,7 +184,7 @@ EOF
         string $user,
         int    $section = 0,
         int    $offset = 0,
-        int    $limit = 100
+        int    $limit = 50
     ): false|SQLite3Result {
         $sectionClause = match ($section) {
             1 => "",

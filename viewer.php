@@ -7,22 +7,16 @@ require 'Database.php';
 $db = new Database($target);
 
 # user
+$users = array();
 $uid = $_GET['u'] ?? $target;
-$u = $db->queryUser($uid);
+$u = u($uid);
 if (!$u) die("Unknown user ID: $uid");
-
-# other parameters
 $section = isset($_GET['section']) ? intval($_GET['section']) : 0;
+$results = $db->queryTweets($uid, $section);
 
 # miscellaneous
 $rtl = ['fa', 'ar', 'he'];
-date_default_timezone_set("Asia/Tehran");
-
-function profilePhoto(array $user): ?string {
-    return str_replace('/', '_', $user['photo']);
-}
-
-$results = $db->queryTweets($uid, $section);
+date_default_timezone_set('Asia/Tehran');
 
 ?><!DOCTYPE html>
 <html lang="" dir="ltr">
@@ -87,51 +81,91 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
 </nav>
 
 <main>
-<?php while ($twt = $results->fetchArray()) : ?>
-  <article class="border-bottom" dir="<?= (in_array($twt['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
-    <div class="times">
-      <time><?= date('Y.m.d - H:i:s', $twt['time']) ?></time><br>
 <?php
+while ($twt = $results->fetchArray()) :
 $isRetweet = $twt['retweet'] != null && $twt['is_quote'] == 0;
-if ($isRetweet) $twt = $db->queryTweet($twt['retweet']);
+if ($isRetweet) {
+    $retweetDate = date('Y.m.d - H:i:s', $twt['time']);
+    $twt = $db->queryTweet($twt['retweet']);
+}
+$tu = u($twt['user']);
 ?>
+  <section class="border-bottom">
+    <img class="author mt-<?= $isRetweet ? 4 : 2 ?>" src="media/<?= "$target/{$twt['user']}/" . profilePhoto($tu) ?>">
+    <article>
 <?php if ($isRetweet) : ?>
-      <time><?= date('Y.m.d - H:i:s', $twt['time']) ?></time><br>
-    </div>
-    <img class="userIcon" src="media/<?=
-        "$target/{$twt['user']}/" . profilePhoto($db->queryUser($twt['user'])) ?>">
-<?php else : ?>
-    </div>
+      <p class="retweeted text-body-tertiary">
+        <img class="icon" src="frontend/icons/retweet.svg">
+        <?= $u['name'] ?> retweeted at <?= $retweetDate ?>
+
+      </p>
 <?php endif ?>
-    <p class="tweet">
+      <p class="author text-body-secondary">
+        <a href="viewer.php?t=<?= $target ?>&u=<?= $twt['user'] ?>&section=1" target="_blank"
+            class="link-body-emphasis link-underline-opacity-0">
+          <span class="text-body fw-bold"><?= $tu['name'] ?></span>
+          @<span><?= $tu['user'] ?></span>
+        </a>
+        · <time><?= date('Y.m.d - H:i:s', $twt['time']) ?></time>
+      </p>
+      <p class="tweet" dir="<?= (in_array($twt['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
 <?= $twt['text'] ?>
 
-    </p>
-<?php if ($twt['media'] != null) : ?>
-    <div class="media">
-<?php foreach (explode(',', $twt['media']) as $med) : ?>
+      </p>
+<?php if ($twt['media'] != null) :
+    $mediaIds = explode(',', $twt['media']); ?>
+      <div class="media media-<?= count($mediaIds) ?>">
+<?php foreach ($mediaIds as $med) : ?>
 <?php $ext = $db->queryMedium($med)['ext']; if ($ext != 'mp4') : ?>
-      <img src="media/<?= "$target/{$twt['user']}/$med.$ext" ?>" class="border">
+        <img src="media/<?= "$target/{$twt['user']}/$med.$ext" ?>" class="border">
 <?php else : ?>
-      <video controls class="border">
-        <source src="media/<?= "$target/{$twt['user']}/$med.mp4" ?>" type="video/mp4">
-      </video>
+        <video controls class="border">
+          <source src="media/<?= "$target/{$twt['user']}/$med.mp4" ?>" type="video/mp4">
+        </video>
 <?php endif ?>
 <?php endforeach ?>
-    </div>
+      </div>
 <?php endif ?>
 <?php if ($twt['is_quote'] == 1) :
-    $quote = $db->queryTweet($twt['retweet']);
+    $qut = $db->queryTweet($twt['retweet']);
+    $quu = u($qut['user']);
 ?>
-    <div class="quote border">
-      <?= $quote['text'] ?>
-    </div>
+      <div class="quote border">
+        <p class="author text-body-secondary">
+          <img src="media/<?= "$target/{$qut['user']}/" . profilePhoto($quu) ?>">
+          <a href="viewer.php?t=<?= $target ?>&u=<?= $qut['user'] ?>&section=1" target="_blank"
+             class="link-body-emphasis link-underline-opacity-0">
+            <span class="text-body fw-bold"><?= $quu['name'] ?></span>
+            @<span><?= $quu['user'] ?></span>
+          </a>
+          · <time><?= date('Y.m.d - H:i:s', $qut['time']) ?></time>
+        </p>
+        <p dir="<?= (in_array($qut['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
+          <?= $qut['text'] ?>
+        </p>
+      </div>
 <?php endif ?>
-  </article>
+    </article>
+  </section>
 
 <?php endwhile ?>
 </main>
 
 <script type="text/javascript" src="frontend/viewer.js"></script>
 </body>
-</html>
+</html><?php
+function u(string|int $id): false|array {
+    global $db, $users;
+    if (is_int($id)) $id = strval($id);
+    if (array_key_exists($id, $users))
+        return $users[$id];
+    else {
+        $nu = $db->queryUser($id);
+        $users[$id] = $nu;
+        return $nu;
+    }
+}
+
+function profilePhoto(array $user): ?string {
+    return str_replace('/', '_', $user['photo']);
+}
