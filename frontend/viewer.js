@@ -1,4 +1,6 @@
-$('header').css('margin-top', '-' + $("figure").height() / 2 + 'px')
+$(document).ready(function () {
+    $('header').css('margin-top', '-' + $('figure').height() / 2 + 'px')
+})
 
 function restoreSucceedingGetParams(px) {
     let after = location.search.substring(px)

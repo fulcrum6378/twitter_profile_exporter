@@ -1,0 +1,8 @@
+<Files "headers.json">
+  Order Allow,Deny
+  Deny from all
+</Files>
+<Files "targets.json">
+  Order Allow,Deny
+  Deny from all
+</Files>

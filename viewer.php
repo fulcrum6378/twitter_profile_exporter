@@ -18,6 +18,8 @@ $section = isset($_GET['section']) ? intval($_GET['section']) : 0;
 $rtl = ['fa', 'ar', 'he'];
 date_default_timezone_set("Asia/Tehran");
 
+$results = $db->queryTweets($uid, $section);
+
 ?><!DOCTYPE html>
 <html lang="" dir="ltr">
 <head>
@@ -25,7 +27,7 @@ date_default_timezone_set("Asia/Tehran");
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#1DA1F2">
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#222222">
   <meta charset="UTF-8">
-  <title><?php echo "{$u['name']} (@{$u['user']})"; ?></title>
+  <title><?= "{$u['name']} (@{$u['user']})"; ?></title>
 
   <link href="frontend/bootstrap.min.css" rel="stylesheet">
   <link href="frontend/viewer.css" rel="stylesheet">
@@ -34,64 +36,64 @@ date_default_timezone_set("Asia/Tehran");
   <script src="frontend/bootstrap.bundle.min.js"></script>
 </head>
 <body class="col-6 border-start border-end">
-<img id="banner" src="<?php echo "media/$target/$uid/" .
-    str_replace('/', '_', $u['banner']) . '.jfif' ?>">
+<img id="banner" src="<?= "media/$target/$uid/" .
+str_replace('/', '_', $u['banner']) . '.jfif' ?>">
 <header>
   <figure>
-    <img id="photo" src="<?php echo "media/$target/$uid/" .
-        str_replace('/', '_', $u['photo']) ?>">
+    <img id="photo" src="<?= "media/$target/$uid/" . str_replace('/', '_', $u['photo']) ?>">
   </figure>
 
-  <p class="fs-3 fw-bold mb-0 mt-2"><?php echo "{$u['name']}"; ?></p>
-  <p class="fs-6 text-body-secondary"><?php echo "@{$u['user']}"; ?></p>
+  <p class="fs-3 fw-bold mb-0 mt-2"><?= "{$u['name']}"; ?></p>
+  <p class="fs-6 text-body-secondary"><?= "@{$u['user']}"; ?></p>
 
-  <p class="fs-6 mb-2"><?php echo "{$u['description']}" ?></p>
+  <p class="fs-6 mb-2"><?= "{$u['description']}" ?></p>
   <p class="fs-6 mb-2 text-body-secondary">
-      <?php if ($u['location'] != null) : ?>
-        <img class="icon" src="frontend/icons/location.svg">
-          <?php echo $u['location'] ?>
-        &nbsp;&nbsp;&nbsp;
-      <?php endif; ?>
-      <?php if ($u['link'] != null) : ?>
-        <img class="icon" src="frontend/icons/link.svg">
-        <a href="<?php echo $u['link'] ?>" target="_blank">
-            <?php echo str_replace('https://', '', $u['link']) ?></a>
-        &nbsp;&nbsp;&nbsp;
-      <?php endif; ?>
+    <?php if ($u['location'] != null) : ?>
+    <img class="icon" src="frontend/icons/location.svg">
+    <?= $u['location'] ?>
+    &nbsp;&nbsp;&nbsp;
+    <?php endif ?>
+    <?php if ($u['link'] != null) : ?>
+    <img class="icon" src="frontend/icons/link.svg">
+    <a href="<?= $u['link'] ?>" target="_blank"><?= str_replace('https://', '', $u['link']) ?></a>
+    &nbsp;&nbsp;&nbsp;
+    <?php endif ?>
+
     <img class="icon" src="frontend/icons/date.svg">
-    Joined <?php echo date('j F Y, H:i:s', $u['created_at']) ?>
+    Joined <?= date('j F Y, H:i:s', $u['created_at']) ?>
+
   </p>
 
   <p class="text-body-secondary">
-    <span class="text-body fw-semibold"><?php echo "{$u['following']}" ?></span> Following
+    <span class="text-body fw-semibold"><?= "{$u['following']}" ?></span> Following
     &nbsp;&nbsp;&nbsp;
-    <span class="text-body fw-semibold"><?php echo "{$u['followers']}" ?></span> Followers
+    <span class="text-body fw-semibold"><?= "{$u['followers']}" ?></span> Followers
   </p>
 </header>
 
 <nav class="text-center navbar border-top border-bottom fs-5">
   <div class="col nav-item">
-    <a class="nav-link<?php if ($section == 0) echo ' fw-bold' ?>"
-       href="javascript:void(0)" id="tweets">Tweets</a>
+    <a class="nav-link<?php if ($section == 0) echo ' fw-bold' ?>" href="javascript:void(0)" id="tweets">Tweets</a>
   </div>
   <div class="col nav-item">
-    <a class="nav-link<?php if ($section == 1) echo ' fw-bold' ?>"
-       href="javascript:void(0)" id="replies">Replies</a>
+    <a class="nav-link<?php if ($section == 1) echo ' fw-bold' ?>" href="javascript:void(0)" id="replies">Replies</a>
   </div>
   <div class="col nav-item">
-    <a class="nav-link<?php if ($section == 2) echo ' fw-bold' ?>"
-       href="javascript:void(0)" id="media">Media</a>
+    <a class="nav-link<?php if ($section == 2) echo ' fw-bold' ?>" href="javascript:void(0)" id="media">Media</a>
   </div>
 </nav>
 
 <main>
-    <?php
-    $results = $db->queryTweets($uid, $section);
-    while ($twt = $results->fetchArray()) : ?>
-      <article class="border-bottom" dir="<?php echo (in_array($twt['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
-          <?php echo $twt['text'] ?>
-      </article>
-    <?php endwhile; ?>
+  <?php while ($twt = $results->fetchArray()) : ?>
+  <article class="border-bottom">
+  <time><?= date('Y/m/j H:i', $twt['time']) ?></time><br>
+  <p dir="<?= (in_array($twt['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
+<?= $twt['text'] ?>
+
+  </p>
+  </article>
+
+<?php endwhile ?>
 </main>
 
 <script type="text/javascript" src="frontend/viewer.js"></script>

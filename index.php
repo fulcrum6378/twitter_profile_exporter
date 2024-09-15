@@ -1,7 +1,7 @@
 <?php
 
 require 'config.php';
-$config = readConfig();
+$targets = readTargets();
 
 date_default_timezone_set("Asia/Tehran");
 
@@ -21,6 +21,7 @@ date_default_timezone_set("Asia/Tehran");
 </head>
 
 <body>
+<?php /*if (count($targets) > 1) :*/ ?>
 <table class="table">
   <thead>
   <tr>
@@ -31,19 +32,20 @@ date_default_timezone_set("Asia/Tehran");
   </tr>
   </thead>
   <tbody>
-  <?php foreach ($config as $id => $u) : ?>
-    <tr>
-      <td><?php echo $id ?></td>
-      <td><?php echo $u['name'] ?></td>
-      <td><?php echo date('Y/m/j H:i', $u['last']) ?></td>
-      <td>
-        <a href="viewer.php?t=<?php echo $id ?>">View</a>
-        &nbsp;
-        <a href="crawler.php?t=<?php echo $id ?>" class="sync">Sync</a>
-      </td>
-    </tr>
+  <?php foreach ($targets as $id => $u) : ?>
+  <tr>
+    <td><?= $id ?></td>
+    <td><?= $u['name'] ?></td>
+    <td><?= date('Y/m/j H:i', $u['last']) ?></td>
+    <td>
+      <a href="viewer.php?t=<?= $id ?>">View</a>
+      &nbsp;
+      <a href="crawler.php?t=<?= $id ?>" class="sync">Sync</a>
+    </td>
+  </tr>
   <?php endforeach; ?>
   </tbody>
 </table>
+<?php /*endif*/ ?>
 </body>
 </html>

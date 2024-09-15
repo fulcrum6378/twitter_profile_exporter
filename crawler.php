@@ -2,8 +2,6 @@
 require 'API.php';
 require 'Database.php';
 
-// TODO strtotime() can potentially produce wrong timestamps on the server!
-
 # settings
 $target = $_GET['t'] ?? '1754604672583913472';
 $section = isset($_GET['section']) ? match ($_GET['section']) {
@@ -26,8 +24,10 @@ const TWIMG_IMAGES = 'https://pbs.twimg.com/profile_images/';
 const TWIMG_BANNERS = 'https://pbs.twimg.com/profile_banners/';
 
 # loop on consecutive requests
-$cacheDir = "cache/$target";
-if (!file_exists($cacheDir)) mkdir($cacheDir, recursive: true);
+if ($useCache) {
+    $cacheDir = "cache/$target";
+    if (!file_exists($cacheDir)) mkdir($cacheDir, recursive: true);
+}
 $ended = false;
 $cursor = null;
 $iFetch = 1;
@@ -36,8 +36,10 @@ $parsedUsers = array();
 $iTarget = intval($target);
 $lastSync = 0;
 while (!$ended) {
-    $cacheFile = "$cacheDir/$iFetch.json";
-    $cacheExists = file_exists($cacheFile);
+    if ($useCache) {
+        $cacheFile = "$cacheDir/$iFetch.json";
+        $cacheExists = file_exists($cacheFile);
+    }
     $doFetch = !$useCache || !$cacheExists;
 
     # fetch tweets from the Twitter/X API
@@ -290,10 +292,10 @@ function download(string $url, string $fileName, int $user): bool {
 # update the config file
 if (!$useCache) {
     require 'config.php';
-    $config = readConfig();
+    $config = readTargets();
     if (!array_key_exists($target, $config))
         $config[$target] = array('name' => '', 'last' => $lastSync);
     else
         if ($lastSync != 0) $config[$target]['last'] = $lastSync;
-    writeConfig($config);
+    writeTargets($config);
 }

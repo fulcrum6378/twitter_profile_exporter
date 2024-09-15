@@ -1,5 +1,5 @@
-config.json
 headers.json
+targets.json
 cache/
 databases/
 frontend/bootstrap*

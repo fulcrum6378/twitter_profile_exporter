@@ -2,8 +2,8 @@
 <project version="4">
   <component name="WebServers">
     <option name="servers">
-      <webServer id="342afe61-7ee7-466a-bded-58a111015adc" name="MahdiParastesh" url="http://mahdiparastesh.ir/twitter/">
-        <fileTransfer rootFolder="/public_html/" host="mahdiparastesh.ir" port="21">
+      <webServer id="342afe61-7ee7-466a-bded-58a111015adc" name="MahdiParastesh" url="http://mahdiparastesh.ir/maryam/">
+        <fileTransfer rootFolder="/public_html/maryam/" host="mahdiparastesh.ir" port="21">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
           </advancedOptions>
