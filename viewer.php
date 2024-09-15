@@ -88,31 +88,45 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
 
 <main>
 <?php while ($twt = $results->fetchArray()) : ?>
-  <article class="border-bottom">
-    <time><?= date('Y.m.d - H:i:s', $twt['time']) ?></time><br>
+  <article class="border-bottom" dir="<?= (in_array($twt['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
+    <div class="times">
+      <time><?= date('Y.m.d - H:i:s', $twt['time']) ?></time><br>
 <?php
 $isRetweet = $twt['retweet'] != null && $twt['is_quote'] == 0;
 if ($isRetweet) $twt = $db->queryTweet($twt['retweet']);
 ?>
 <?php if ($isRetweet) : ?>
-    <time><?= date('Y.m.d - H:i:s', $twt['time']) ?></time><br>
-    <img class="userIcon" src="media/<?= "$target/{$twt['user']}/" . profilePhoto($db->queryUser($twt['user'])) ?>">
+      <time><?= date('Y.m.d - H:i:s', $twt['time']) ?></time><br>
+    </div>
+    <img class="userIcon" src="media/<?=
+        "$target/{$twt['user']}/" . profilePhoto($db->queryUser($twt['user'])) ?>">
+<?php else : ?>
+    </div>
 <?php endif ?>
-    <p class="tweet" dir="<?= (in_array($twt['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
+    <p class="tweet">
 <?= $twt['text'] ?>
 
     </p>
+<?php if ($twt['media'] != null) : ?>
     <div class="media">
-<?php if ($twt['media'] != null) foreach (explode(',', $twt['media']) as $med) : ?>
+<?php foreach (explode(',', $twt['media']) as $med) : ?>
 <?php $ext = $db->queryMedium($med)['ext']; if ($ext != 'mp4') : ?>
-      <img src="media/<?= "$target/{$twt['user']}/$med.$ext" ?>">
+      <img src="media/<?= "$target/{$twt['user']}/$med.$ext" ?>" class="border">
 <?php else : ?>
-      <video controls>
+      <video controls class="border">
         <source src="media/<?= "$target/{$twt['user']}/$med.mp4" ?>" type="video/mp4">
       </video>
 <?php endif ?>
 <?php endforeach ?>
     </div>
+<?php endif ?>
+<?php if ($twt['is_quote'] == 1) :
+    $quote = $db->queryTweet($twt['retweet']);
+?>
+    <div class="quote border">
+      <?= $quote['text'] ?>
+    </div>
+<?php endif ?>
   </article>
 
 <?php endwhile ?>
