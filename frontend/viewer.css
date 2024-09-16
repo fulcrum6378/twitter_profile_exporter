@@ -1,5 +1,7 @@
 body {
     margin: auto;
+    padding: 0 !important;
+    max-width: 50rem !important;
     font-family: TwitterChirp, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 

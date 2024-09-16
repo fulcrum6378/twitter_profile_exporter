@@ -50,12 +50,14 @@ class API {
             CURLOPT_CUSTOMREQUEST => 'GET',
             CURLOPT_URL => $url,
             CURLOPT_HTTPHEADER => $this->headers,
-            CURLOPT_PROXY => '127.0.0.1:8580',
-            CURLOPT_SSL_VERIFYPEER => 0,
             CURLOPT_TIMEOUT => 30,
             CURLOPT_RETURNTRANSFER => true,
-            //CURLOPT_VERBOSE => 1,
         ));
+        if (PHP_OS == 'WINNT') {
+            curl_setopt($curl, CURLOPT_PROXY, '127.0.0.1:8580');
+            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+            //curl_setopt($curl, CURLOPT_VERBOSE, 1);
+        }
         $res = curl_exec($curl); // $err = curl_error($curl);
         curl_close($curl);
         return $res ?: '';

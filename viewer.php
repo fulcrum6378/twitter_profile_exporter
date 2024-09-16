@@ -1,8 +1,8 @@
 <?php
 
 # target database
-if (!isset($_GET['t'])) die("No target detected!");
-$target = '1754604672583913472';
+if (isset($_GET['t'])) $target = $_GET['t'];
+if (!isset($target)) die("No target detected!");
 require 'Database.php';
 $db = new Database($target);
 
@@ -33,7 +33,7 @@ date_default_timezone_set('Asia/Tehran');
   <script src="frontend/jquery-3.7.1.min.js"></script>
   <script src="frontend/bootstrap.bundle.min.js"></script>
 </head>
-<body class="col-6 border-start border-end">
+<body class="container border-start border-end">
 <img id="banner" src="media/<?= "$target/$uid/" .
 str_replace('/', '_', $u['banner']) . '.jfif' ?>">
 <header>

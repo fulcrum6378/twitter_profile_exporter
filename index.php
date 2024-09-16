@@ -3,6 +3,11 @@
 require 'config.php';
 $targets = readTargets();
 
+if (count($targets) == 1) :
+    $target = array_key_first($targets);
+    require 'viewer.php';
+
+else :
 date_default_timezone_set("Asia/Tehran");
 
 ?><!DOCTYPE html>
@@ -21,7 +26,6 @@ date_default_timezone_set("Asia/Tehran");
 </head>
 
 <body>
-<?php /*if (count($targets) > 1) :*/ ?>
 <table class="table">
   <thead>
   <tr>
@@ -46,6 +50,5 @@ date_default_timezone_set("Asia/Tehran");
   <?php endforeach; ?>
   </tbody>
 </table>
-<?php /*endif*/ ?>
 </body>
-</html>
+</html><?php endif ?>
