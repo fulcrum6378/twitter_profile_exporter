@@ -103,6 +103,15 @@ p.author img {
     border-radius: 50%;
 }
 
+#pagination {
+    text-align: center;
+    padding: 1rem 0;
+}
+#pagination .pagination {
+    text-align: center;
+    margin: 0;
+}
+
 @keyframes spinner {
     from {
         transform: rotate(0deg);

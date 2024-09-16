@@ -269,10 +269,12 @@ function download(string $url, string $fileName, int $user): bool {
         curl_setopt_array($curl, array(
             CURLOPT_URL => $url,
             CURLOPT_FILE => $file,
-            CURLOPT_PROXY => '127.0.0.1:8580',
-            CURLOPT_SSL_VERIFYPEER => 0,
             CURLOPT_TIMEOUT => 60,
         ));
+        if (PHP_OS == 'WINNT') {
+            curl_setopt($curl, CURLOPT_PROXY, '127.0.0.1:8580');
+            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+        }
         $res = curl_exec($curl) == 1;
         curl_close($curl);
         fclose($file);
@@ -280,6 +282,7 @@ function download(string $url, string $fileName, int $user): bool {
         if (!$res) {
             $retryCount++;
             if ($retryCount >= 3) {
+                unlink("$mediaDir/$fileName");
                 echo "Couldn't download $url\n";
                 return false;
             } else
