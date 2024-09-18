@@ -14,6 +14,7 @@ $updateOnly = !isset($_GET['update_only']) || $_GET['update_only'] == '1';
 /** entries not tweets; set to 0 in order to turn it off. */
 $maxEntries = isset($_GET['max_entries']) ? intval($_GET['max_entries']) : 0;
 $delay = isset($_GET['delay']) ? intval($_GET['delay']) : 10;
+$verbose = isset($_GET['verbose']) ? $_GET['verbose'] == '1' : !$updateOnly;
 
 # modules
 $db = new Database($target, true);
@@ -46,7 +47,7 @@ while (!$ended) {
     if ($doFetch) {
         $res = $api->userTweets($section, $target, $cursor);
         if ($res == "") die("Couldn't fetch tweets!");
-        else echo "Fetched page $iFetch\n";
+        else if ($verbose) echo "Fetched page $iFetch\n";
     }
 
     if ($useCache) {
@@ -56,7 +57,7 @@ while (!$ended) {
             fwrite($j, $res);
         else {
             $res = fread($j, filesize($cacheFile));
-            echo "Using cached page $iFetch\n";
+            if ($verbose) echo "Using cached page $iFetch\n";
         }
         fclose($j);
     } else
@@ -87,7 +88,7 @@ while (!$ended) {
     $iFetch++;
 
     if ($doFetch && !$ended) {
-        echo "Waiting in order not to be detected as a bot ($delay seconds)...\n";
+        if ($verbose) echo "Waiting in order not to be detected as a bot ($delay seconds)...\n";
         sleep($delay);
     }
 }
@@ -114,7 +115,7 @@ function parseEntry(stdClass $entry): bool {
 
 function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
     if (!property_exists($tweet, 'rest_id')) return true; // TweetTombstone
-    global $db, $parsedUsers, $iTarget;
+    global $db, $parsedUsers, $verbose, $iTarget;
     $tweetId = intval($tweet->rest_id);
 
     # User
@@ -122,7 +123,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
     if (!in_array($userId, $parsedUsers)) {
         $ul = $tweet->core->user_results->result->legacy;
         $userExistsInDb = $db->checkIfRowExists($db->User, $userId);
-        if (!$userExistsInDb) echo "Processing user @$ul->screen_name (id:$userId)\n";
+        if (!$userExistsInDb) if ($verbose) echo "Processing user @$ul->screen_name (id:$userId)\n";
         $link = property_exists($ul, 'url') ? $ul->entities->url->urls[0]->expanded_url : null;
         $pinnedTweet = (count($ul->pinned_tweet_ids_str) > 0) ? $ul->pinned_tweet_ids_str[0] : null;
 
@@ -170,7 +171,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
     }
 
 
-    echo "Processing tweet $tweetId\n";
+    if ($verbose) echo "Processing tweet $tweetId\n";
     $important = $userId == $iTarget || $retweetFromUser == $iTarget;
 
     # main text
@@ -253,7 +254,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
 
 function download(string $url, string $fileName, int $user): bool {
     # ensure existence of itself and its directory
-    global $target;
+    global $target, $verbose;
     $mediaDir = "media/$target/$user";
     if (!file_exists($mediaDir)) {
         mkdir($mediaDir, recursive: true);
@@ -263,7 +264,7 @@ function download(string $url, string $fileName, int $user): bool {
 
     $retryCount = 0;
     while (!$res) {
-        if ($retryCount == 0) echo "Downloading $url\n";
+        if ($verbose && $retryCount == 0) echo "Downloading $url\n";
         $file = fopen("$mediaDir/$fileName", 'w');
         $curl = curl_init();
         curl_setopt_array($curl, array(
@@ -302,3 +303,5 @@ if (!$useCache) {
         if ($lastSync != 0) $config[$target]['last'] = $lastSync;
     writeTargets($config);
 }
+
+if (!$verbose) echo 'DONE!';
