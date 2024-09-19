@@ -180,19 +180,32 @@ EOF
         $q->execute();
     }
 
-    function queryTweets(
-        string $user,
-        int    $section = 0,
-        int    $offset = 0,
-        int    $limit = 50
-    ): false|SQLite3Result {
-        $sectionClause = match ($section) {
+    function tweetSectionClause(int $section): string {
+        return match ($section) {
             1 => "",
             2 => "AND media IS NOT NULL",
             default => "AND reply IS NULL ",
         };
+    }
+
+    function countTweets(
+        string $user,
+        int    $section = 0,
+    ): int {
+        $clause = $this->tweetSectionClause($section);
+        return $this->db->query("SELECT COUNT(1) FROM Tweet WHERE user = $user $clause")->fetchArray()[0];
+    }
+
+    function queryTweets(
+        string $user,
+        int    $section = 0,
+        int    $page = 0,
+        int    $length = 50
+    ): false|SQLite3Result {
+        $clause = $this->tweetSectionClause($section);
+        $offset = $page * $length;
         return $this->db->query(
-            "SELECT * FROM Tweet WHERE user = $user $sectionClause ORDER BY time DESC LIMIT $limit OFFSET $offset"
+            "SELECT * FROM Tweet WHERE user = $user $clause ORDER BY time DESC LIMIT $length OFFSET $offset"
         );
     }
 

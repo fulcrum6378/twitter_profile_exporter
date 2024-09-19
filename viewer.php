@@ -11,8 +11,23 @@ $users = array();
 $uid = $_GET['u'] ?? $target;
 $u = u($uid);
 if (!$u) die("Unknown user ID: $uid");
+
+# page
 $section = isset($_GET['section']) ? intval($_GET['section']) : 0;
-$results = $db->queryTweets($uid, $section);
+$page = isset($_GET['p']) ? (intval($_GET['p']) - 1) : 0;
+$pageLength = isset($_GET['length']) ? intval($_GET['length']) : 50;
+$tweets = $db->queryTweets($uid, $section, $page, $pageLength);
+
+# pagination
+const MAX_PAGE_LINKS = 7;
+$pageCount = ceil($db->countTweets($uid, $section) / $pageLength);
+$pMin = 0;
+$pMax = $pageCount - 1;
+if ($page > MAX_PAGE_LINKS) $pMin = $page - MAX_PAGE_LINKS;
+if (($pMax - $page) > MAX_PAGE_LINKS) $pMax = $page + MAX_PAGE_LINKS + 1;
+$pRng = range($pMin, $pMax);
+if ($pMin > 0) array_unshift($pRng, 0);
+if ($pMax < $pageCount - 1) $pRng[] = $pageCount - 1;
 
 # miscellaneous
 $rtl = ['fa', 'ar', 'he'];
@@ -86,7 +101,7 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
 
 <main>
 <?php
-while ($twt = $results->fetchArray()) :
+while ($twt = $tweets->fetchArray()) :
 $isRetweet = $twt['retweet'] != null && $twt['is_quote'] == 0;
 if ($isRetweet) {
     $retweetDate = date('Y.m.d - H:i:s', $twt['time']);
@@ -157,17 +172,23 @@ $tu = u($twt['user']);
 
 <nav id="pagination">
   <ul class="pagination">
-    <li class="page-item disabled">
-      <a class="page-link">Previous</a>
-    </li>
-    <li class="page-item"><a class="page-link" href="#">1</a></li>
-    <li class="page-item active" aria-current="page">
-      <a class="page-link" href="#">2</a>
-    </li>
-    <li class="page-item"><a class="page-link" href="#">3</a></li>
-    <li class="page-item">
-      <a class="page-link" href="#">Next</a>
-    </li>
+<?php if ($page == 0) : ?>
+    <li class="page-item disabled"><a class="page-link">Previous</a></li>
+<?php else : ?>
+    <li class="page-item"><a class="page-link" href="javascript:void(0)" data-p="<?= $page ?>">Previous</a></li>
+<?php endif ?>
+<?php foreach ($pRng as $p) : ?>
+<?php if ($page == $p) : ?>
+    <li class="page-item active" aria-current="page"><a class="page-link"><?= $p + 1 ?></a></li>
+<?php else : ?>
+    <li class="page-item"><a class="page-link" href="javascript:void(0)"><?= $p + 1 ?></a></li>
+<?php endif ?>
+<?php endforeach ?>
+<?php if ($page == $pageCount - 1) : ?>
+    <li class="page-item disabled"><a class="page-link">Next</a></li>
+<?php else : ?>
+    <li class="page-item"><a class="page-link" href="javascript:void(0)" data-p="<?= $page + 2 ?>">Next</a></li>
+<?php endif ?>
   </ul>
 </nav>
 

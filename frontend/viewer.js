@@ -37,7 +37,7 @@ function restoreSucceedingGetParams(px) {
     return after
 }
 
-function setGetParam(param, value) {
+function setGetParam(param, value) { // FIXME
     let qm = location.search.indexOf('?' + param + '=')
     if (qm !== -1) {
         let px = qm + ('?' + param + '=').length
@@ -56,12 +56,22 @@ function setGetParam(param, value) {
     }
 }
 
-$("#tweets").click(function () {
-    location.assign(setGetParam('section', '0'))
+const PARAM_SECTION = 'section'
+const PARAM_PAGE = 'p'
+
+$('#tweets').click(function () {
+    location.assign(setGetParam(PARAM_SECTION, '0'))
 });
-$("#replies").click(function () {
-    location.assign(setGetParam('section', '1'))
+$('#replies').click(function () {
+    location.assign(setGetParam(PARAM_SECTION, '1'))
 });
-$("#media").click(function () {
-    location.assign(setGetParam('section', '2'))
+$('#media').click(function () {
+    location.assign(setGetParam(PARAM_SECTION, '2'))
+});
+$('.page-link[href]').click(function () {
+    let pAttr = $(this).attr("data-p");
+    if (typeof pAttr === 'undefined' || pAttr === false)
+        location.assign(setGetParam(PARAM_PAGE, parseInt($(this).html())))
+    else
+        location.assign(setGetParam(PARAM_PAGE, pAttr))
 });
