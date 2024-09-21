@@ -104,6 +104,7 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
 while ($twt = $tweets->fetchArray()) :
 $isRetweet = $twt['retweet'] != null && $twt['is_quote'] == 0;
 if ($isRetweet) {
+    $retweetId = $twt['id'];
     $retweetDate = date('Y.m.d - H:i:s', $twt['time']);
     $twt = $db->queryTweet($twt['retweet']);
 }
@@ -115,7 +116,10 @@ $tu = u($twt['user']);
 <?php if ($isRetweet) : ?>
       <p class="retweeted text-body-tertiary">
         <img class="icon" src="frontend/icons/retweet.svg">
-        <?= $u['name'] ?> retweeted at <?= $retweetDate ?>
+        <a href="https://x.com/<?= $u['user'] ?>/status/<?= $retweetId ?>" target="_blank"
+            class="link-body-emphasis link-underline-opacity-0">
+          <?= $u['name'] ?> retweeted at <?= $retweetDate ?>
+        </a>
 
       </p>
 <?php endif ?>
@@ -125,7 +129,11 @@ $tu = u($twt['user']);
           <span class="text-body fw-bold"><?= $tu['name'] ?></span>
           @<span><?= $tu['user'] ?></span>
         </a>
-        · <time><?= date('Y.m.d - H:i:s', $twt['time']) ?></time>
+        ·
+        <a href="https://x.com/<?= $tu['user'] ?>/status/<?= $twt['id'] ?>" target="_blank"
+           class="link-body-emphasis link-underline-opacity-0">
+          <time><?= date('Y.m.d - H:i:s', $twt['time']) ?></time>
+        </a>
       </p>
       <p class="tweet" dir="<?= (in_array($twt['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
 <?= $twt['text'] ?>
@@ -171,7 +179,7 @@ $tu = u($twt['user']);
 </main>
 
 <nav id="pagination">
-  <ul class="pagination">
+  <ul class="pagination justify-content-center">
 <?php if ($page == 0) : ?>
     <li class="page-item disabled"><a class="page-link">Previous</a></li>
 <?php else : ?>

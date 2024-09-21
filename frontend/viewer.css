@@ -104,12 +104,10 @@ p.author img {
 }
 
 #pagination {
-    text-align: center;
     padding: 1rem 0;
 }
 #pagination .pagination {
-    text-align: center;
-    margin: 0;
+    margin-bottom: 0;
 }
 
 @keyframes spinner {

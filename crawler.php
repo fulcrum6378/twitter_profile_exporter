@@ -1,6 +1,7 @@
 <?php
 require 'API.php';
 require 'Database.php';
+set_time_limit(0);
 
 # settings
 $target = $_GET['t'] ?? '1754604672583913472';

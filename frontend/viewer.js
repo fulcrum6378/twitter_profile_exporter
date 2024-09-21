@@ -31,7 +31,7 @@ $('#sync').click(function () {
 function restoreSucceedingGetParams(px) {
     let after = location.search.substring(px)
     if (after.includes('&'))
-        after = after.split('&', 2)[1]
+        after = '&' + after.split('&', 2)[1]
     else
         after = ''
     return after
