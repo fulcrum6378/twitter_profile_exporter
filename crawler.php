@@ -5,7 +5,7 @@ set_time_limit(0);
 
 # settings
 $target = $_GET['t'] ?? '1754604672583913472';
-$section = isset($_GET['section']) ? match ($_GET['section']) {
+$section = isset($_GET['sect']) ? match ($_GET['sect']) {
     '0' => ProfileSection::Tweets,
     '2' => ProfileSection::Media,
     default => ProfileSection::Replies

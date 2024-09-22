@@ -13,7 +13,7 @@ $u = u($uid);
 if (!$u) die("Unknown user ID: $uid");
 
 # page
-$section = isset($_GET['section']) ? intval($_GET['section']) : 0;
+$section = isset($_GET['sect']) ? intval($_GET['sect']) : 0;
 $page = isset($_GET['p']) ? (intval($_GET['p']) - 1) : 0;
 $pageLength = isset($_GET['length']) ? intval($_GET['length']) : 50;
 $tweets = $db->queryTweets($uid, $section, $page, $pageLength);
@@ -89,19 +89,32 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
 
 <nav class="text-center navbar border-top border-bottom fs-5">
   <div class="col nav-item">
-    <a class="nav-link<?php if ($section == 0) echo ' fw-bold' ?>" href="javascript:void(0)" id="tweets">Tweets</a>
+    <a class="nav-link<?= $section == 0 ? ' fw-bold' : '' ?>" href="javascript:void(0)" id="tweets">Tweets</a>
   </div>
   <div class="col nav-item">
-    <a class="nav-link<?php if ($section == 1) echo ' fw-bold' ?>" href="javascript:void(0)" id="replies">Replies</a>
+    <a class="nav-link<?= $section == 1 ? ' fw-bold' : '' ?>" href="javascript:void(0)" id="replies">Replies</a>
   </div>
   <div class="col nav-item">
-    <a class="nav-link<?php if ($section == 2) echo ' fw-bold' ?>" href="javascript:void(0)" id="media">Media</a>
+    <a class="nav-link<?= $section == 2 ? ' fw-bold' : '' ?>" href="javascript:void(0)" id="media">Media</a>
   </div>
 </nav>
 
 <main>
 <?php
-while ($twt = $tweets->fetchArray()) :
+while ($ent = $tweets->fetchArray()) :
+$thread = array($ent);
+$bottomId = $ent['id'];
+if ($section == 1 || $section == 2) {
+    $rep = $ent['reply'];
+    while ($rep != null) {
+        $reply = $db->queryTweet($rep);
+        if (!$reply) break;
+        $thread[] = $reply;
+        $rep = $reply['reply'];
+    }
+    $thread = array_reverse($thread);
+}
+foreach ($thread as $twt) :
 $isRetweet = $twt['retweet'] != null && $twt['is_quote'] == 0;
 if ($isRetweet) {
     $retweetId = $twt['id'];
@@ -110,8 +123,13 @@ if ($isRetweet) {
 }
 $tu = u($twt['user']);
 ?>
-  <section class="border-bottom">
-    <img class="author mt-<?= $isRetweet ? 4 : 2 ?>" src="media/<?= "$target/{$twt['user']}/" . profilePhoto($tu) ?>">
+  <section<?= $bottomId == $twt['id'] ? ' class="border-bottom"' : '' ?>>
+    <figure>
+      <img class="author mt-<?= $isRetweet ? 4 : 2 ?>" src="media/<?= "$target/{$twt['user']}/" . profilePhoto($tu) ?>">
+<?php if ($bottomId != $twt['id']) : ?>
+      <div class="continuum border border-2"></div>
+<?php endif ?>
+    </figure>
     <article>
 <?php if ($isRetweet) : ?>
       <p class="retweeted text-body-tertiary">
@@ -124,8 +142,8 @@ $tu = u($twt['user']);
       </p>
 <?php endif ?>
       <p class="author text-body-secondary">
-        <a href="viewer.php?t=<?= $target ?>&u=<?= $twt['user'] ?>&section=1" target="_blank"
-            class="link-body-emphasis link-underline-opacity-0">
+        <a href="viewer.php?t=<?= $target ?>&u=<?= $twt['user'] ?>&sect=1" target="_blank"
+           class="link-body-emphasis link-underline-opacity-0">
           <span class="text-body fw-bold"><?= $tu['name'] ?></span>
           @<span><?= $tu['user'] ?></span>
         </a>
@@ -160,7 +178,7 @@ $tu = u($twt['user']);
       <div class="quote border">
         <p class="author text-body-secondary">
           <img src="media/<?= "$target/{$qut['user']}/" . profilePhoto($quu) ?>">
-          <a href="viewer.php?t=<?= $target ?>&u=<?= $qut['user'] ?>&section=1" target="_blank"
+          <a href="viewer.php?t=<?= $target ?>&u=<?= $qut['user'] ?>&sect=1" target="_blank"
              class="link-body-emphasis link-underline-opacity-0">
             <span class="text-body fw-bold"><?= $quu['name'] ?></span>
             @<span><?= $quu['user'] ?></span>
@@ -170,12 +188,26 @@ $tu = u($twt['user']);
         <p dir="<?= (in_array($qut['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
           <?= $qut['text'] ?>
         </p>
+<?php if ($qut['media'] != null) :
+    $mediaIds = explode(',', $qut['media']); ?>
+        <div class="media media-<?= count($mediaIds) ?>">
+<?php foreach ($mediaIds as $med) : ?>
+<?php $ext = $db->queryMedium($med)['ext']; if ($ext != 'mp4') : ?>
+          <img src="media/<?= "$target/{$qut['user']}/$med.$ext" ?>" class="border">
+<?php else : ?>
+          <video controls class="border">
+            <source src="media/<?= "$target/{$qut['user']}/$med.mp4" ?>" type="video/mp4">
+          </video>
+<?php endif ?>
+<?php endforeach ?>
+        </div>
+<?php endif ?>
       </div>
 <?php endif ?>
     </article>
   </section>
 
-<?php endwhile ?>
+<?php endforeach; endwhile ?>
 </main>
 
 <nav id="pagination">

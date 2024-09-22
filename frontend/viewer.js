@@ -1,3 +1,7 @@
+// noinspection JSUnresolvedReference
+
+import './query.js'
+
 $(document).ready(function () {
     let nmt = '-' + $('figure').height() / 2 + 'px';
     $('header').css('margin-top', nmt)
@@ -28,39 +32,14 @@ $('#sync').click(function () {
 
 })
 
-function restoreSucceedingGetParams(px) {
-    let after = location.search.substring(px)
-    if (after.includes('&'))
-        after = '&' + after.split('&', 2)[1]
-    else
-        after = ''
-    return after
-}
-
-function setGetParam(param, value) { // FIXME
-    let qm = location.search.indexOf('?' + param + '=')
-    if (qm !== -1) {
-        let px = qm + ('?' + param + '=').length
-        return location.origin + location.pathname + location.search.substring(0, px) + value +
-            restoreSucceedingGetParams(px)
-    } else {
-        let am = location.search.indexOf('&' + param + '=')
-        if (am !== -1) {
-            let px = am + ('?' + param + '=').length
-            return location.origin + location.pathname + location.search.substring(0, px) + value +
-                restoreSucceedingGetParams(px)
-        } else if (location.search === '')
-            return location.origin + location.pathname + '?' + param + '=' + value
-        else
-            return location.origin + location.pathname + location.search + '&' + param + '=' + value
-    }
-}
-
-const PARAM_SECTION = 'section'
+const PARAM_SECTION = 'sect'
 const PARAM_PAGE = 'p'
 
 $('#tweets').click(function () {
-    location.assign(setGetParam(PARAM_SECTION, '0'))
+    let search = location.search
+    search = setGetParam(search, PARAM_SECTION, '0')
+    setGetParams()
+    location.assign(location.origin + location.pathname + search)
 });
 $('#replies').click(function () {
     location.assign(setGetParam(PARAM_SECTION, '1'))

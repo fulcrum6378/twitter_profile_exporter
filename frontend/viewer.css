@@ -55,6 +55,14 @@ img.author {
     height: 3rem;
     border-radius: 50%;
 }
+.continuum {
+    display: block;
+    width: 0;
+    height: 100%;
+    z-index: -1;
+    position: relative;
+    left: 1.4rem;
+}
 article {
     width: calc(100% - 3rem);
     padding: .3rem 0 .7rem .7rem;
