@@ -15,16 +15,16 @@ if (!$u) die("Unknown user ID: $uid");
 # page
 $section = isset($_GET['sect']) ? intval($_GET['sect']) : 1;
 $page = isset($_GET['p']) ? (intval($_GET['p']) - 1) : 0;
-$pageLength = isset($_GET['length']) ? intval($_GET['length']) : 50;
+$pageLength = isset($_GET['length']) ? intval($_GET['length']) : Database::PAGE_LENGTH;
 $tweets = $db->queryTweets($uid, $section, $page, $pageLength);
 
 # pagination
-const MAX_PAGE_LINKS = 7;
+const MAX_PAGE_LINKS = 3;
 $pageCount = ceil($db->countTweets($uid, $section) / $pageLength);
 $pMin = 0;
 $pMax = $pageCount - 1;
 if ($page > MAX_PAGE_LINKS) $pMin = $page - MAX_PAGE_LINKS;
-if (($pMax - $page) > MAX_PAGE_LINKS) $pMax = $page + MAX_PAGE_LINKS + 1;
+if (($pMax - $page) > MAX_PAGE_LINKS) $pMax = $page + MAX_PAGE_LINKS;
 $pRng = range($pMin, $pMax);
 if ($pMin > 0) array_unshift($pRng, 0);
 if ($pMax < $pageCount - 1) $pRng[] = $pageCount - 1;
@@ -62,7 +62,10 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
   </div>
 
   <p class="fs-3 fw-bold mb-0 mt-2"><?= "{$u['name']}"; ?></p>
-  <p class="fs-6 text-body-secondary"><?= "@{$u['user']}"; ?></p>
+  <p class="fs-6 text-body-secondary">
+    <a href="https://x.com/<?= "@{$u['user']}"; ?>" target="_blank"
+       class="link-body-emphasis link-underline-opacity-0"><?= "@{$u['user']}"; ?></a>
+  </p>
   <p class="fs-6 mb-2"><?= "{$u['description']}" ?></p>
 
   <p class="fs-6 mb-2 text-body-secondary">
@@ -82,9 +85,9 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
   </p>
 
   <p class="text-body-secondary">
-    <span class="text-body fw-semibold"><?= "{$u['following']}" ?></span> Following
+    <span class="text-body fw-semibold"><?= n($u['following']) ?></span> Following
     &nbsp;&nbsp;&nbsp;
-    <span class="text-body fw-semibold"><?= "{$u['followers']}" ?></span> Followers
+    <span class="text-body fw-semibold"><?= n($u['followers']) ?></span> Followers
   </p>
 </header>
 
@@ -124,6 +127,7 @@ if ($isRetweet) {
     $bottomId = $twt['id'];
 }
 $tu = u($twt['user']);
+$stat = $db->queryTweetStat($twt['id']);
 ?>
   <section<?= $bottomId == $twt['id'] ? ' class="border-bottom"' : '' ?>>
     <figure>
@@ -176,9 +180,11 @@ if ($twt['media'] != null) :
 <?php endif ?>
 <?php if ($twt['is_quote'] == 1) :
     $qut = $db->queryTweet($twt['retweet']);
-    $quu = u($qut['user']);
 ?>
       <div class="quote border">
+<?php if ($qut) :
+    $quu = u($qut['user']);
+?>
         <p class="author text-body-secondary">
           <img src="media/<?= "$target/{$qut['user']}/" . profilePhoto($quu) ?>">
           <a href="viewer.php?t=<?= $target ?>&u=<?= $qut['user'] ?>&sect=1" target="_blank"
@@ -205,8 +211,38 @@ if ($twt['media'] != null) :
 <?php endforeach ?>
         </div>
 <?php endif ?>
+<?php else: ?>
+        This tweet is from an account that no longer exists.
+<?php endif ?>
       </div>
 <?php endif ?>
+
+      <div class="tweetStat">
+        <p>
+          <img class="icon" src="frontend/icons/reply.svg">
+          <?= n($stat['reply']) ?>
+        </p>
+        <p>
+          <img class="icon" src="frontend/icons/retweet.svg">
+          <?= n($stat['retweet']) ?>
+        </p>
+        <p>
+          <img class="icon" src="frontend/icons/quote.svg">
+          <?= n($stat['quote']) ?>
+        </p>
+        <p>
+          <img class="icon" src="frontend/icons/like.svg">
+          <?= n($stat['favorite']) ?>
+        </p>
+        <p>
+          <img class="icon" src="frontend/icons/stat.svg">
+          <?= n($stat['view']) ?? '-' ?>
+        </p>
+        <p>
+          <img class="icon" src="frontend/icons/bookmark.svg">
+          <?= n($stat['bookmark']) ?>
+        </p>
+      </div>
     </article>
   </section>
 
@@ -216,9 +252,9 @@ if ($twt['media'] != null) :
 <nav id="pagination">
   <ul class="pagination justify-content-center">
 <?php if ($page == 0) : ?>
-    <li class="page-item disabled"><a class="page-link">Previous</a></li>
+    <li class="page-item disabled"><a class="page-link">&#8592;</a></li>
 <?php else : ?>
-    <li class="page-item"><a class="page-link" href="javascript:void(0)" data-p="<?= $page ?>">Previous</a></li>
+    <li class="page-item"><a class="page-link" href="javascript:void(0)" data-p="<?= $page ?>">&#8592;</a></li>
 <?php endif ?>
 <?php foreach ($pRng as $p) : ?>
 <?php if ($page == $p) : ?>
@@ -228,9 +264,9 @@ if ($twt['media'] != null) :
 <?php endif ?>
 <?php endforeach ?>
 <?php if ($page == $pageCount - 1) : ?>
-    <li class="page-item disabled"><a class="page-link">Next</a></li>
+    <li class="page-item disabled"><a class="page-link">&#8594;</a></li>
 <?php else : ?>
-    <li class="page-item"><a class="page-link" href="javascript:void(0)" data-p="<?= $page + 2 ?>">Next</a></li>
+    <li class="page-item"><a class="page-link" href="javascript:void(0)" data-p="<?= $page + 2 ?>">&#8594;</a></li>
 <?php endif ?>
   </ul>
 </nav>
@@ -252,4 +288,10 @@ function u(string|int $id): false|array {
 
 function profilePhoto(array $user): ?string {
     return str_replace('/', '_', $user['photo']);
+}
+
+function n(int $num): string {
+    if ($num > 1000000) return intval($num / 1000000) . 'm';
+    if ($num > 1000) return intval($num / 1000) . 'k';
+    return $num;
 }

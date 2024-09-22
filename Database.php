@@ -9,6 +9,8 @@ class Database {
 
     private SQLite3 $db;
 
+    const int PAGE_LENGTH = 20;
+
     function __construct(string $userId, bool $createIfNotExists = false) {
         $dbDir = 'databases';
         if (!file_exists($dbDir)) mkdir($dbDir);
@@ -200,7 +202,7 @@ EOF
         string $user,
         int    $section = 1,
         int    $page = 0,
-        int    $length = 50
+        int    $length = Database::PAGE_LENGTH
     ): false|SQLite3Result {
         $clause = $this->tweetSectionClause($section);
         $offset = $page * $length;
@@ -253,6 +255,10 @@ EOF
         $q->bindValue(6, $view);
         $q->bindValue(7, $id);
         $q->execute();
+    }
+
+    function queryTweetStat(int $id): array|false {
+        return $this->db->query("SELECT * FROM TweetStat WHERE id = $id LIMIT 1")->fetchArray();
     }
 
     function insertMedia(

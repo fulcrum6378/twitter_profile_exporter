@@ -81,8 +81,11 @@ p.author {
     direction: ltr;
     margin: .3rem 0;
 }
-.media > * {
+.media {
     margin-top: 0.1rem;
+    margin-bottom: 0.5rem;
+}
+.media > * {
     width: 24%;
     border-radius: 1rem;
 }
@@ -99,10 +102,10 @@ p.author {
     width: 24%;
 }
 .quote {
-    margin: 0.1rem 0 0 0;
+    margin: 0.1rem 0 0.5rem 0;
     width: 90%;
     border-radius: 1rem;
-    padding: 0.4rem 0.6rem;
+    padding: 0.4rem 0.8rem;
     font-size: 14px;
 }
 p.author img {
@@ -110,9 +113,23 @@ p.author img {
     height: 2rem;
     border-radius: 50%;
 }
+.tweetStat {
+    display: flex;
+}
+.tweetStat > p {
+    margin: auto;
+    font-size: .8rem;
+    opacity: .85;
+}
+.tweetStat .icon {
+    width: 16px;
+    height: 16px;
+    opacity: .65;
+}
 
 #pagination {
     padding: 1rem 0;
+    overflow-x: hidden;
 }
 #pagination .pagination {
     margin-bottom: 0;
