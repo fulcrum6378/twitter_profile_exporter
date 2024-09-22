@@ -4,18 +4,18 @@ require 'Database.php';
 set_time_limit(0);
 
 # settings
-$target = $_GET['t'] ?? '1754604672583913472';
+$target = $argv[1] ?? $_GET['t'];
 $section = isset($_GET['sect']) ? match ($_GET['sect']) {
     '0' => ProfileSection::Tweets,
     '2' => ProfileSection::Media,
     default => ProfileSection::Replies
 } : ProfileSection::Replies;
 $useCache = isset($_GET['use_cache']) && $_GET['use_cache'] == '1';
-$updateOnly = !isset($_GET['update_only']) || $_GET['update_only'] == '1';
+$updateOnly = ($argv[2] ?? $_GET['update_only']) != '0';
 /** entries not tweets; set to 0 in order to turn it off. */
 $maxEntries = isset($_GET['max_entries']) ? intval($_GET['max_entries']) : 0;
 $delay = isset($_GET['delay']) ? intval($_GET['delay']) : 10;
-$verbose = isset($_GET['verbose']) ? $_GET['verbose'] == '1' : !$updateOnly;
+$verbose = ($argv[3] ?? isset($_GET['verbose']) ?? '0') == '1';
 
 # modules
 $db = new Database($target, true);

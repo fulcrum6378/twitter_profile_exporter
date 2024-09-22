@@ -121,6 +121,7 @@ if ($isRetweet) {
     $retweetId = $twt['id'];
     $retweetDate = date('Y.m.d - H:i:s', $twt['time']);
     $twt = $db->queryTweet($twt['retweet']);
+    $bottomId = $twt['id'];
 }
 $tu = u($twt['user']);
 ?>
