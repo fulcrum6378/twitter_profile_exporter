@@ -1,13 +1,13 @@
-// noinspection JSUnresolvedReference
+// noinspection JSCheckFunctionSignatures,JSUnresolvedReference
 
-import './query.js'
-
+// EARLY CONFIGURATIONS
 $(document).ready(function () {
     let nmt = '-' + $('figure').height() / 2 + 'px';
     $('header').css('margin-top', nmt)
     $('#actions').css('margin-top', nmt)
 })
 
+// SYNCHRONIZATION
 let syncing = false
 $('#sync').click(function () {
     if (syncing) return
@@ -32,25 +32,23 @@ $('#sync').click(function () {
 
 })
 
+// PAGINATION
 const PARAM_SECTION = 'sect'
 const PARAM_PAGE = 'p'
-
-$('#tweets').click(function () {
-    let search = location.search
-    search = setGetParam(search, PARAM_SECTION, '0')
-    setGetParams()
-    location.assign(location.origin + location.pathname + search)
-});
-$('#replies').click(function () {
-    location.assign(setGetParam(PARAM_SECTION, '1'))
-});
-$('#media').click(function () {
-    location.assign(setGetParam(PARAM_SECTION, '2'))
-});
+const tabs = ['tweets', 'replies', 'media']
+tabs.forEach(function (value, index) {
+    $('#' + value).click(function () {
+        let params = parseParams()
+        params[PARAM_SECTION] = (index + 1).toString()
+        delete params[PARAM_PAGE]
+        location.assign(location.origin + location.pathname + arrangeParams(params))
+    });
+})
 $('.page-link[href]').click(function () {
-    let pAttr = $(this).attr("data-p");
-    if (typeof pAttr === 'undefined' || pAttr === false)
-        location.assign(setGetParam(PARAM_PAGE, parseInt($(this).html())))
-    else
-        location.assign(setGetParam(PARAM_PAGE, pAttr))
+    let pAttr = $(this).attr("data-p")
+    let params = parseParams()
+    params[PARAM_PAGE] = (typeof pAttr === 'undefined' || pAttr === false)
+        ? parseInt($(this).html())
+        : pAttr
+    location.assign(location.origin + location.pathname + arrangeParams(params))
 });

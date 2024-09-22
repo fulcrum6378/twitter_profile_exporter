@@ -182,15 +182,15 @@ EOF
 
     function tweetSectionClause(int $section): string {
         return match ($section) {
-            1 => "",
-            2 => "AND media IS NOT NULL",
+            2 => "",
+            3 => "AND media IS NOT NULL",
             default => "AND reply IS NULL ",
         };
     }
 
     function countTweets(
         string $user,
-        int    $section = 0,
+        int    $section = 1,
     ): int {
         $clause = $this->tweetSectionClause($section);
         return $this->db->query("SELECT COUNT(1) FROM Tweet WHERE user = $user $clause")->fetchArray()[0];
@@ -198,7 +198,7 @@ EOF
 
     function queryTweets(
         string $user,
-        int    $section = 0,
+        int    $section = 1,
         int    $page = 0,
         int    $length = 50
     ): false|SQLite3Result {

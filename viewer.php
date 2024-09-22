@@ -13,7 +13,7 @@ $u = u($uid);
 if (!$u) die("Unknown user ID: $uid");
 
 # page
-$section = isset($_GET['sect']) ? intval($_GET['sect']) : 0;
+$section = isset($_GET['sect']) ? intval($_GET['sect']) : 1;
 $page = isset($_GET['p']) ? (intval($_GET['p']) - 1) : 0;
 $pageLength = isset($_GET['length']) ? intval($_GET['length']) : 50;
 $tweets = $db->queryTweets($uid, $section, $page, $pageLength);
@@ -47,6 +47,7 @@ date_default_timezone_set('Asia/Tehran');
 
   <script src="frontend/jquery-3.7.1.min.js"></script>
   <script src="frontend/bootstrap.bundle.min.js"></script>
+  <script src="frontend/query.js"></script>
 </head>
 <body class="container border-start border-end">
 <img id="banner" src="media/<?= "$target/$uid/" .
@@ -89,13 +90,13 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
 
 <nav class="text-center navbar border-top border-bottom fs-5">
   <div class="col nav-item">
-    <a class="nav-link<?= $section == 0 ? ' fw-bold' : '' ?>" href="javascript:void(0)" id="tweets">Tweets</a>
+    <a class="nav-link<?= $section == 1 ? ' fw-bold' : '' ?>" href="javascript:void(0)" id="tweets">Tweets</a>
   </div>
   <div class="col nav-item">
-    <a class="nav-link<?= $section == 1 ? ' fw-bold' : '' ?>" href="javascript:void(0)" id="replies">Replies</a>
+    <a class="nav-link<?= $section == 2 ? ' fw-bold' : '' ?>" href="javascript:void(0)" id="replies">Replies</a>
   </div>
   <div class="col nav-item">
-    <a class="nav-link<?= $section == 2 ? ' fw-bold' : '' ?>" href="javascript:void(0)" id="media">Media</a>
+    <a class="nav-link<?= $section == 3 ? ' fw-bold' : '' ?>" href="javascript:void(0)" id="media">Media</a>
   </div>
 </nav>
 
@@ -104,7 +105,7 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
 while ($ent = $tweets->fetchArray()) :
 $thread = array($ent);
 $bottomId = $ent['id'];
-if ($section == 1 || $section == 2) {
+if ($section == 2 || $section == 3) {
     $rep = $ent['reply'];
     while ($rep != null) {
         $reply = $db->queryTweet($rep);
@@ -157,7 +158,8 @@ $tu = u($twt['user']);
 <?= $twt['text'] ?>
 
       </p>
-<?php if ($twt['media'] != null) :
+<?php /** @noinspection DuplicatedCode */
+if ($twt['media'] != null) :
     $mediaIds = explode(',', $twt['media']); ?>
       <div class="media media-<?= count($mediaIds) ?>">
 <?php foreach ($mediaIds as $med) : ?>
@@ -232,7 +234,7 @@ $tu = u($twt['user']);
   </ul>
 </nav>
 
-<script type="text/javascript" src="frontend/viewer.js"></script>
+<script src="frontend/viewer.js"></script>
 </body>
 </html><?php
 function u(string|int $id): false|array {
