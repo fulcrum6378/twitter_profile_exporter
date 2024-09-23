@@ -22,6 +22,7 @@ $('#sync').click(function () {
             alert(result)
             syncing = false
             $('#sync').removeClass('spinning')
+            location.reload()
         },
         error: function (jqXHR, textStatus, errorThrown) {
             alert(errorThrown)
