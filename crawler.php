@@ -1,9 +1,12 @@
 <?php
 require 'API.php';
 require 'Database.php';
+
+# global settings
+if (isset($argv)) chdir(dirname($_SERVER['PHP_SELF']));
 set_time_limit(0);
 
-# settings
+# process the request
 $target = $argv[1] ?? $_GET['t'];
 $section = isset($_GET['sect']) ? match ($_GET['sect']) {
     '0' => ProfileSection::Tweets,
@@ -11,13 +14,13 @@ $section = isset($_GET['sect']) ? match ($_GET['sect']) {
     default => ProfileSection::Replies
 } : ProfileSection::Replies;
 $useCache = isset($_GET['use_cache']) && $_GET['use_cache'] == '1';
-$updateOnly = ($argv[2] ?? $_GET['update_only']) != '0';
+$updateOnly = ($argv[2] ?? $_GET['update_only'] ?? '1') != '0';
 /** entries not tweets; set to 0 in order to turn it off. */
 $maxEntries = isset($_GET['max_entries']) ? intval($_GET['max_entries']) : 0;
 $delay = isset($_GET['delay']) ? intval($_GET['delay']) : 10;
 $verbose = ($argv[3] ?? isset($_GET['verbose']) ?? '0') == '1';
 
-# modules
+# submodules
 $db = new Database($target, true);
 $api = new API();
 
