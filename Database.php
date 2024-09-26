@@ -206,8 +206,12 @@ EOF
     ): false|SQLite3Result {
         $clause = $this->tweetSectionClause($section);
         $offset = $page * $length;
+        if ($length > 0)
+            $limit = " LIMIT $length OFFSET $offset";
+        else
+            $limit = '';
         return $this->db->query(
-            "SELECT * FROM Tweet WHERE user = $user $clause ORDER BY time DESC LIMIT $length OFFSET $offset"
+            "SELECT * FROM Tweet WHERE user = $user $clause ORDER BY time DESC$limit"
         );
     }
 
