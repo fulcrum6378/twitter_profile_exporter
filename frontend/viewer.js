@@ -1,6 +1,6 @@
 // noinspection JSCheckFunctionSignatures,JSUnresolvedReference
 
-// EARLY CONFIGURATIONS
+// INITIAL CONFIGURATIONS
 $(document).ready(function () {
     let nmt = '-' + $('figure').height() / 2 + 'px';
     $('header').css('margin-top', nmt)
@@ -8,29 +8,31 @@ $(document).ready(function () {
 })
 
 // SYNCHRONIZATION
-let syncing = false
-$('#sync').click(function () {
-    if (syncing) return
-    syncing = true
-    $(this).addClass('spinning')
-    $.ajax({
-        url: 'crawler.php?t=' + $(this).attr('data-target'),
-        cache: false,
-        dataType: 'text',
-        timeout: 5 * 60 * 1000,
-        success: function (result/*, textStatus, jqXHR*/) {
-            alert(result)
-            syncing = false
-            $('#sync').removeClass('spinning')
-            location.reload()
-        },
-        error: function (jqXHR, textStatus, errorThrown) {
-            alert(errorThrown)
-            syncing = false
-            $('#sync').removeClass('spinning')
-        }
-    });
+let crawler = null
 
+function syncEnded() {
+    if (crawler === null) return
+    crawler.close()
+    crawler = null
+    $('#sync').removeClass('spinning')
+    $('#crawlHalt').addClass('disabled')
+}
+
+$('#sync').click(function () {
+    $(this).addClass('spinning')
+    $('#crawler').show()
+    crawler = new EventSource('crawler.php?t=' + $(this).attr('data-t'))
+    crawler.onmessage = (event) => {
+        $('#crawlEvents').append(event.data + '</br>')
+        if (event.data === 'DONE') syncEnded()
+    }
+    $('#crawlOK').click(function () {
+        syncEnded()
+        $('#crawler').hide()
+        location.reload()  // $('#crawlOK, #crawlHalt').click(null)
+    })
+    $('#crawlHalt').click(() => syncEnded())
+    //crawler.onerror = (err) => alert(err)
 })
 
 // PAGINATION

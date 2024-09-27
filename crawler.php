@@ -28,6 +28,12 @@ $api = new API();
 const TWIMG_IMAGES = 'https://pbs.twimg.com/profile_images/';
 const TWIMG_BANNERS = 'https://pbs.twimg.com/profile_banners/';
 
+# HTTP headers
+header('X-Accel-Buffering: no');
+header('Content-Type: text/event-stream');
+header('Cache-Control: no-cache');
+header('Connection: keep-alive');
+
 # loop on consecutive requests
 if ($useCache) {
     $cacheDir = "cache/$target";
@@ -50,8 +56,8 @@ while (!$ended) {
     # fetch tweets from the Twitter/X API
     if ($doFetch) {
         $res = $api->userTweets($section, $target, $cursor);
-        if ($res == "") die("Couldn't fetch tweets!");
-        else if ($verbose) echo "Fetched page $iFetch\n";
+        if ($res == "") error("Couldn't fetch tweets!");
+        else if ($verbose) message("Fetched page $iFetch\n");
     }
 
     if ($useCache) {
@@ -61,7 +67,7 @@ while (!$ended) {
             fwrite($j, $res);
         else {
             $res = fread($j, filesize($cacheFile));
-            if ($verbose) echo "Using cached page $iFetch\n";
+            if ($verbose) message("Using cached page $iFetch\n");
         }
         fclose($j);
     } else
@@ -92,9 +98,13 @@ while (!$ended) {
     $iFetch++;
 
     if ($doFetch && !$ended) {
-        if ($verbose) echo "Waiting in order not to be detected as a bot ($delay seconds)...\n";
+        if ($verbose) message("Waiting in order not to be detected as a bot ($delay seconds)...\n");
         sleep($delay);
     }
+
+    //if (ob_get_contents()) ob_end_flush();
+    //flush();
+    if (connection_aborted()) break;
 }
 
 function parseEntry(stdClass $entry): bool {
@@ -127,7 +137,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
     if (!in_array($userId, $parsedUsers)) {
         $ul = $tweet->core->user_results->result->legacy;
         $userExistsInDb = $db->checkIfRowExists($db->User, $userId);
-        if (!$userExistsInDb) if ($verbose) echo "Processing user @$ul->screen_name (id:$userId)\n";
+        if (!$userExistsInDb) if ($verbose) message("Processing user @$ul->screen_name (id:$userId)\n");
         $link = property_exists($ul, 'url') ? $ul->entities->url->urls[0]->expanded_url : null;
         $pinnedTweet = (count($ul->pinned_tweet_ids_str) > 0) ? $ul->pinned_tweet_ids_str[0] : null;
 
@@ -175,7 +185,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
     }
 
 
-    if ($verbose) echo "Processing tweet $tweetId\n";
+    if ($verbose) message("Processing tweet $tweetId\n");
     $important = $userId == $iTarget || $retweetFromUser == $iTarget;
 
     # main text
@@ -208,13 +218,14 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
         if ($media == null) $media = $med->id_str;
         else $media .= ',' . $med->id_str;
         $medId = intval($med->id_str);
+        /** @noinspection PhpVoidFunctionResultUsedInspection */
         $medUrl = match ($med->type) {
             'photo' => $med->media_url_https,
             'video' => $important
                 ? end($med->video_info->variants)->url
                 : $med->video_info->variants[1]->url,
             'animated_gif' => $med->video_info->variants[0]->url,
-            default => die("Unknown media type: $med->type ($med->id_str)"),
+            default => error("Unknown media type: $med->type ($med->id_str)"),
         };
         $medUrlPath = explode('.', explode('?', $medUrl, 2)[0]);
         $medExt = end($medUrlPath);
@@ -226,8 +237,8 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
         try {
             download($medUrl, "$medId.$medExt", $userId);
         } catch (TypeError $e) {
-            echo $e;
-            die("\n$tweetId");
+            message($e);
+            error("\n$tweetId");
         }
 
         # remove the link from the main text
@@ -268,7 +279,7 @@ function download(string $url, string $fileName, int $user): bool {
 
     $retryCount = 0;
     while (!$res) {
-        if ($verbose && $retryCount == 0) echo "Downloading $url\n";
+        if ($verbose && $retryCount == 0) message("Downloading $url\n");
         $file = fopen("$mediaDir/$fileName", 'w');
         $curl = curl_init();
         curl_setopt_array($curl, array(
@@ -288,13 +299,26 @@ function download(string $url, string $fileName, int $user): bool {
             $retryCount++;
             if ($retryCount >= 3) {
                 unlink("$mediaDir/$fileName");
-                echo "Couldn't download $url\n";
+                message("Couldn't download $url\n");
                 return false;
             } else
-                echo "Retrying for media... ($url)\n";
+                message("Retrying for media... ($url)\n");
         }
     }
     return true;
+}
+
+function message(string $data): void {
+    echo "event: message\ndata: $data\n\n";
+    //if (ob_get_contents()) ob_end_flush();
+    flush();
+}
+
+function error(string $data): void {
+    echo "event: error\ndata: $data\n\n";
+    //if (ob_get_contents()) ob_end_flush();
+    flush();
+    die();
 }
 
 # update the config file
@@ -308,4 +332,4 @@ if (!$useCache) {
     writeTargets($config);
 }
 
-if (!$verbose) echo 'DONE!';
+if (!$verbose) message('DONE');

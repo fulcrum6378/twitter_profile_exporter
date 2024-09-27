@@ -18,6 +18,7 @@ date_default_timezone_set("Asia/Tehran");
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#222222">
   <meta charset="UTF-8">
   <title>Twitter Profile Exporter</title>
+  <link rel="icon" href="frontend/icons/twitter.svg" sizes="any" type="image/svg+xml">
 
   <base target="_blank">
   <script src="frontend/jquery-3.7.1.min.js"></script>

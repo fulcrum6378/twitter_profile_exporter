@@ -41,6 +41,7 @@ date_default_timezone_set('Asia/Tehran');
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#222222">
   <meta charset="UTF-8">
   <title><?= "{$u['name']} (@{$u['user']})"; ?></title>
+  <link rel="icon" href="frontend/icons/twitter.svg" sizes="any" type="image/svg+xml">
 
   <link href="frontend/bootstrap.min.css" rel="stylesheet">
   <link href="frontend/viewer.css" rel="stylesheet">
@@ -58,7 +59,7 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
   </figure>
 
   <div id="actions">
-    <img id="sync" class="btn btn-light border" src="frontend/icons/retweet.svg" data-target="<?= $target ?>">
+    <img id="sync" class="btn btn-light border" src="frontend/icons/retweet.svg" data-t="<?= $target ?>">
   </div>
 
   <p class="fs-3 fw-bold mb-0 mt-2"><?= "{$u['name']}"; ?></p>
@@ -69,16 +70,16 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
   <p class="fs-6 mb-2"><?= "{$u['description']}" ?></p>
 
   <p class="fs-6 mb-2 text-body-secondary">
-<?php if ($u['location'] != null) : ?>
-    <img class="icon" src="frontend/icons/location.svg">
-    <?= $u['location'] ?>
-    &nbsp;&nbsp;&nbsp;
-<?php endif ?>
-<?php if ($u['link'] != null) : ?>
-    <img class="icon" src="frontend/icons/link.svg">
-    <a href="<?= $u['link'] ?>" target="_blank"><?= str_replace('https://', '', $u['link']) ?></a>
-    &nbsp;&nbsp;&nbsp;
-<?php endif ?>
+      <?php if ($u['location'] != null) : ?>
+        <img class="icon" src="frontend/icons/location.svg">
+          <?= $u['location'] ?>
+        &nbsp;&nbsp;&nbsp;
+      <?php endif ?>
+      <?php if ($u['link'] != null) : ?>
+        <img class="icon" src="frontend/icons/link.svg">
+        <a href="<?= $u['link'] ?>" target="_blank"><?= str_replace('https://', '', $u['link']) ?></a>
+        &nbsp;&nbsp;&nbsp;
+      <?php endif ?>
     <img class="icon" src="frontend/icons/date.svg">
     Joined <?= date('j F Y, H:i:s', $u['created_at']) ?>
 
@@ -104,172 +105,191 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
 </nav>
 
 <main>
-<?php
-while ($ent = $tweets->fetchArray()) :
-$thread = array($ent);
-$bottomId = $ent['id'];
-if ($section == 2 || $section == 3) {
-    $rep = $ent['reply'];
-    while ($rep != null) {
-        $reply = $db->queryTweet($rep);
-        if (!$reply) break;
-        $thread[] = $reply;
-        $rep = $reply['reply'];
-    }
-    $thread = array_reverse($thread);
-}
-foreach ($thread as $twt) :
-$isRetweet = $twt['retweet'] != null && $twt['is_quote'] == 0;
-if ($isRetweet) {
-    $retweetId = $twt['id'];
-    $retweetDate = date('Y.m.d - H:i:s', $twt['time']);
-    $twt = $db->queryTweet($twt['retweet']);
-    $bottomId = $twt['id'];
-}
-$tu = u($twt['user']);
-$stat = $db->queryTweetStat($twt['id']);
-?>
-  <section<?= $bottomId == $twt['id'] ? ' class="border-bottom"' : '' ?>>
-    <figure>
-      <img class="author mt-<?= $isRetweet ? 4 : 2 ?>" src="media/<?= "$target/{$twt['user']}/" . profilePhoto($tu) ?>">
-<?php if ($bottomId != $twt['id']) : ?>
-      <div class="continuum border border-2"></div>
-<?php endif ?>
-    </figure>
-    <article>
-<?php if ($isRetweet) : ?>
-      <p class="retweeted text-body-tertiary">
-        <img class="icon" src="frontend/icons/retweet.svg">
-        <a href="https://x.com/<?= $u['user'] ?>/status/<?= $retweetId ?>" target="_blank"
-            class="link-body-emphasis link-underline-opacity-0">
-          <?= $u['name'] ?> retweeted at <?= $retweetDate ?>
-        </a>
+    <?php
+    while ($ent = $tweets->fetchArray()) :
+        $thread = array($ent);
+        $bottomId = $ent['id'];
+        if ($section == 2 || $section == 3) {
+            $rep = $ent['reply'];
+            while ($rep != null) {
+                $reply = $db->queryTweet($rep);
+                if (!$reply) break;
+                $thread[] = $reply;
+                $rep = $reply['reply'];
+            }
+            $thread = array_reverse($thread);
+        }
+        foreach ($thread as $twt) :
+            $isRetweet = $twt['retweet'] != null && $twt['is_quote'] == 0;
+            if ($isRetweet) {
+                $retweetId = $twt['id'];
+                $retweetDate = date('Y.m.d - H:i:s', $twt['time']);
+                $twt = $db->queryTweet($twt['retweet']);
+                $bottomId = $twt['id'];
+            }
+            $tu = u($twt['user']);
+            $stat = $db->queryTweetStat($twt['id']);
+            ?>
+          <section<?= $bottomId == $twt['id'] ? ' class="border-bottom"' : '' ?>>
+            <figure>
+              <img class="author mt-<?= $isRetweet ? 4 : 2 ?>"
+                   src="media/<?= "$target/{$twt['user']}/" . profilePhoto($tu) ?>">
+                <?php if ($bottomId != $twt['id']) : ?>
+                  <div class="continuum border border-2"></div>
+                <?php endif ?>
+            </figure>
+            <article>
+                <?php if ($isRetweet) : ?>
+                  <p class="retweeted text-body-tertiary">
+                    <img class="icon" src="frontend/icons/retweet.svg">
+                    <a href="https://x.com/<?= $u['user'] ?>/status/<?= $retweetId ?>" target="_blank"
+                       class="link-body-emphasis link-underline-opacity-0">
+                        <?= $u['name'] ?> retweeted at <?= $retweetDate ?>
+                    </a>
 
-      </p>
-<?php endif ?>
-      <p class="author text-body-secondary">
-        <a href="viewer.php?t=<?= $target ?>&u=<?= $twt['user'] ?>&sect=1" target="_blank"
-           class="link-body-emphasis link-underline-opacity-0">
-          <span class="text-body fw-bold"><?= $tu['name'] ?></span>
-          @<span><?= $tu['user'] ?></span>
-        </a>
-        ·
-        <a href="https://x.com/<?= $tu['user'] ?>/status/<?= $twt['id'] ?>" target="_blank"
-           class="link-body-emphasis link-underline-opacity-0">
-          <time><?= date('Y.m.d - H:i:s', $twt['time']) ?></time>
-        </a>
-      </p>
-      <p class="tweet" dir="<?= (in_array($twt['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
-<?= $twt['text'] ?>
+                  </p>
+                <?php endif ?>
+              <p class="author text-body-secondary">
+                <a href="viewer.php?t=<?= $target ?>&u=<?= $twt['user'] ?>&sect=1" target="_blank"
+                   class="link-body-emphasis link-underline-opacity-0">
+                  <span class="text-body fw-bold"><?= $tu['name'] ?></span>
+                  @<span><?= $tu['user'] ?></span>
+                </a>
+                ·
+                <a href="https://x.com/<?= $tu['user'] ?>/status/<?= $twt['id'] ?>" target="_blank"
+                   class="link-body-emphasis link-underline-opacity-0">
+                  <time><?= date('Y.m.d - H:i:s', $twt['time']) ?></time>
+                </a>
+              </p>
+              <p class="tweet" dir="<?= (in_array($twt['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
+                  <?= $twt['text'] ?>
 
-      </p>
-<?php /** @noinspection DuplicatedCode */
-if ($twt['media'] != null) :
-    $mediaIds = explode(',', $twt['media']); ?>
-      <div class="media media-<?= count($mediaIds) ?>">
-<?php foreach ($mediaIds as $med) : ?>
-<?php $ext = $db->queryMedium($med)['ext']; if ($ext != 'mp4') : ?>
-        <img src="media/<?= "$target/{$twt['user']}/$med.$ext" ?>" class="border">
-<?php else : ?>
-        <video controls class="border">
-          <source src="media/<?= "$target/{$twt['user']}/$med.mp4" ?>" type="video/mp4">
-        </video>
-<?php endif ?>
-<?php endforeach ?>
-      </div>
-<?php endif ?>
-<?php if ($twt['is_quote'] == 1) :
-    $qut = $db->queryTweet($twt['retweet']);
-?>
-      <div class="quote border">
-<?php if ($qut) :
-    $quu = u($qut['user']);
-?>
-        <p class="author text-body-secondary">
-          <img src="media/<?= "$target/{$qut['user']}/" . profilePhoto($quu) ?>">
-          <a href="viewer.php?t=<?= $target ?>&u=<?= $qut['user'] ?>&sect=1" target="_blank"
-             class="link-body-emphasis link-underline-opacity-0">
-            <span class="text-body fw-bold"><?= $quu['name'] ?></span>
-            @<span><?= $quu['user'] ?></span>
-          </a>
-          · <time><?= date('Y.m.d - H:i:s', $qut['time']) ?></time>
-        </p>
-        <p dir="<?= (in_array($qut['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
-          <?= $qut['text'] ?>
-        </p>
-<?php if ($qut['media'] != null) :
-    $mediaIds = explode(',', $qut['media']); ?>
-        <div class="media media-<?= count($mediaIds) ?>">
-<?php foreach ($mediaIds as $med) : ?>
-<?php $ext = $db->queryMedium($med)['ext']; if ($ext != 'mp4') : ?>
-          <img src="media/<?= "$target/{$qut['user']}/$med.$ext" ?>" class="border">
-<?php else : ?>
-          <video controls class="border">
-            <source src="media/<?= "$target/{$qut['user']}/$med.mp4" ?>" type="video/mp4">
-          </video>
-<?php endif ?>
-<?php endforeach ?>
-        </div>
-<?php endif ?>
-<?php else: ?>
-        This tweet is from an account that no longer exists.
-<?php endif ?>
-      </div>
-<?php endif ?>
+              </p>
+                <?php /** @noinspection DuplicatedCode */
+                if ($twt['media'] != null) :
+                    $mediaIds = explode(',', $twt['media']); ?>
+                  <div class="media media-<?= count($mediaIds) ?>">
+                      <?php foreach ($mediaIds as $med) : ?>
+                          <?php $ext = $db->queryMedium($med)['ext'];
+                          if ($ext != 'mp4') : ?>
+                            <img src="media/<?= "$target/{$twt['user']}/$med.$ext" ?>" class="border">
+                          <?php else : ?>
+                            <video controls class="border">
+                              <source src="media/<?= "$target/{$twt['user']}/$med.mp4" ?>" type="video/mp4">
+                            </video>
+                          <?php endif ?>
+                      <?php endforeach ?>
+                  </div>
+                <?php endif ?>
+                <?php if ($twt['is_quote'] == 1) :
+                    $qut = $db->queryTweet($twt['retweet']);
+                    ?>
+                  <div class="quote border">
+                      <?php if ($qut) :
+                          $quu = u($qut['user']);
+                          ?>
+                        <p class="author text-body-secondary">
+                          <img src="media/<?= "$target/{$qut['user']}/" . profilePhoto($quu) ?>">
+                          <a href="viewer.php?t=<?= $target ?>&u=<?= $qut['user'] ?>&sect=1" target="_blank"
+                             class="link-body-emphasis link-underline-opacity-0">
+                            <span class="text-body fw-bold"><?= $quu['name'] ?></span>
+                            @<span><?= $quu['user'] ?></span>
+                          </a>
+                          ·
+                          <time><?= date('Y.m.d - H:i:s', $qut['time']) ?></time>
+                        </p>
+                        <p dir="<?= (in_array($qut['lang'], $rtl)) ? 'rtl' : 'ltr' ?>">
+                            <?= $qut['text'] ?>
+                        </p>
+                          <?php if ($qut['media'] != null) :
+                          $mediaIds = explode(',', $qut['media']); ?>
+                        <div class="media media-<?= count($mediaIds) ?>">
+                            <?php foreach ($mediaIds as $med) : ?>
+                                <?php $ext = $db->queryMedium($med)['ext'];
+                                if ($ext != 'mp4') : ?>
+                                  <img src="media/<?= "$target/{$qut['user']}/$med.$ext" ?>" class="border">
+                                <?php else : ?>
+                                  <video controls class="border">
+                                    <source src="media/<?= "$target/{$qut['user']}/$med.mp4" ?>" type="video/mp4">
+                                  </video>
+                                <?php endif ?>
+                            <?php endforeach ?>
+                        </div>
+                      <?php endif ?>
+                      <?php else: ?>
+                        This tweet is from an account that no longer exists.
+                      <?php endif ?>
+                  </div>
+                <?php endif ?>
 
-      <div class="tweetStat">
-        <p>
-          <img class="icon" src="frontend/icons/reply.svg">
-          <?= n($stat['reply']) ?>
-        </p>
-        <p>
-          <img class="icon" src="frontend/icons/retweet.svg">
-          <?= n($stat['retweet']) ?>
-        </p>
-        <p>
-          <img class="icon" src="frontend/icons/quote.svg">
-          <?= n($stat['quote']) ?>
-        </p>
-        <p>
-          <img class="icon" src="frontend/icons/like.svg">
-          <?= n($stat['favorite']) ?>
-        </p>
-        <p>
-          <img class="icon" src="frontend/icons/stat.svg">
-          <?= n($stat['view']) ?>
-        </p>
-        <p>
-          <img class="icon" src="frontend/icons/bookmark.svg">
-          <?= n($stat['bookmark']) ?>
-        </p>
-      </div>
-    </article>
-  </section>
+              <div class="tweetStat">
+                <p>
+                  <img class="icon" src="frontend/icons/reply.svg">
+                    <?= n($stat['reply']) ?>
+                </p>
+                <p>
+                  <img class="icon" src="frontend/icons/retweet.svg">
+                    <?= n($stat['retweet']) ?>
+                </p>
+                <p>
+                  <img class="icon" src="frontend/icons/quote.svg">
+                    <?= n($stat['quote']) ?>
+                </p>
+                <p>
+                  <img class="icon" src="frontend/icons/like.svg">
+                    <?= n($stat['favorite']) ?>
+                </p>
+                <p>
+                  <img class="icon" src="frontend/icons/stat.svg">
+                    <?= n($stat['view']) ?>
+                </p>
+                <p>
+                  <img class="icon" src="frontend/icons/bookmark.svg">
+                    <?= n($stat['bookmark']) ?>
+                </p>
+              </div>
+            </article>
+          </section>
 
-<?php endforeach; endwhile ?>
+        <?php endforeach; endwhile ?>
 </main>
 
 <nav id="pagination">
   <ul class="pagination justify-content-center">
-<?php if ($page == 0) : ?>
-    <li class="page-item disabled"><a class="page-link">&#8592;</a></li>
-<?php else : ?>
-    <li class="page-item"><a class="page-link" href="javascript:void(0)" data-p="<?= $page ?>">&#8592;</a></li>
-<?php endif ?>
-<?php foreach ($pRng as $p) : ?>
-<?php if ($page == $p) : ?>
-    <li class="page-item active" aria-current="page"><a class="page-link"><?= $p + 1 ?></a></li>
-<?php else : ?>
-    <li class="page-item"><a class="page-link" href="javascript:void(0)"><?= $p + 1 ?></a></li>
-<?php endif ?>
-<?php endforeach ?>
-<?php if ($page == $pageCount - 1) : ?>
-    <li class="page-item disabled"><a class="page-link">&#8594;</a></li>
-<?php else : ?>
-    <li class="page-item"><a class="page-link" href="javascript:void(0)" data-p="<?= $page + 2 ?>">&#8594;</a></li>
-<?php endif ?>
+      <?php if ($page == 0) : ?>
+        <li class="page-item disabled"><a class="page-link">&#8592;</a></li>
+      <?php else : ?>
+        <li class="page-item"><a class="page-link" href="javascript:void(0)" data-p="<?= $page ?>">&#8592;</a></li>
+      <?php endif ?>
+      <?php foreach ($pRng as $p) : ?>
+          <?php if ($page == $p) : ?>
+          <li class="page-item active" aria-current="page"><a class="page-link"><?= $p + 1 ?></a></li>
+          <?php else : ?>
+          <li class="page-item"><a class="page-link" href="javascript:void(0)"><?= $p + 1 ?></a></li>
+          <?php endif ?>
+      <?php endforeach ?>
+      <?php if ($page == $pageCount - 1) : ?>
+        <li class="page-item disabled"><a class="page-link">&#8594;</a></li>
+      <?php else : ?>
+        <li class="page-item"><a class="page-link" href="javascript:void(0)" data-p="<?= $page + 2 ?>">&#8594;</a></li>
+      <?php endif ?>
   </ul>
 </nav>
+
+<div id="crawler" class="modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Synchronisation</h5>
+      </div>
+      <code class="modal-body" id="crawlEvents"></code>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="crawlHalt">Halt</button>
+        <button type="button" class="btn btn-primary" id="crawlOK">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script src="frontend/viewer.js"></script>
 </body>

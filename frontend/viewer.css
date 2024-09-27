@@ -135,6 +135,10 @@ p.author img {
     margin-bottom: 0;
 }
 
+.modal {
+    background: rgba(0, 20, 80, 0.4);
+}
+
 @keyframes spinner {
     from {
         transform: rotate(0deg);
