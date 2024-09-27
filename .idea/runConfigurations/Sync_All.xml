@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Sync All" type="PhpLocalRunConfigurationType" factoryName="PHP Console" path="$PROJECT_DIR$/crawler.php" scriptParameters="1754604672583913472 0 1">
+    <method v="2" />
+  </configuration>
+</component>

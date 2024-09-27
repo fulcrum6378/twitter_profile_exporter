@@ -18,7 +18,7 @@ $updateOnly = ($argv[2] ?? $_GET['update_only'] ?? '1') != '0';
 /** entries not tweets; set to 0 in order to turn it off. */
 $maxEntries = isset($_GET['max_entries']) ? intval($_GET['max_entries']) : 0;
 $delay = isset($_GET['delay']) ? intval($_GET['delay']) : 10;
-$verbose = ($argv[3] ?? isset($_GET['verbose']) ?? '0') == '1';
+$verbose = ($argv[3] ?? $_GET['verbose'] ?? '1') != '0';
 
 # submodules
 $db = new Database($target, true);
@@ -57,7 +57,7 @@ while (!$ended) {
     if ($doFetch) {
         $res = $api->userTweets($section, $target, $cursor);
         if ($res == "") error("Couldn't fetch tweets!");
-        else if ($verbose) message("Fetched page $iFetch\n");
+        else if ($verbose) message("Fetched page $iFetch");
     }
 
     if ($useCache) {
@@ -67,11 +67,13 @@ while (!$ended) {
             fwrite($j, $res);
         else {
             $res = fread($j, filesize($cacheFile));
-            if ($verbose) message("Using cached page $iFetch\n");
+            if ($verbose) message("Using cached page $iFetch");
         }
         fclose($j);
     } else
         if ($lastSync == 0) $lastSync = time();
+
+    if (connection_aborted()) die();
 
     /** @noinspection PhpUndefinedVariableInspection (true negative) */
     foreach (json_decode($res)->data->user->result->timeline_v2->timeline->instructions as $instruction) {
@@ -87,6 +89,7 @@ while (!$ended) {
                 foreach ($instruction->entries as $entry) {
                     $ret = parseEntry($entry);
                     if (!$ret && $updateOnly) break 4;
+                    if (connection_aborted()) die();
                 }
                 break;
         }
@@ -97,14 +100,12 @@ while (!$ended) {
     }
     $iFetch++;
 
+    if (connection_aborted()) die();
     if ($doFetch && !$ended) {
-        if ($verbose) message("Waiting in order not to be detected as a bot ($delay seconds)...\n");
+        if ($verbose) message("Waiting in order not to be detected as a bot ($delay seconds)...");
         sleep($delay);
     }
-
-    //if (ob_get_contents()) ob_end_flush();
-    //flush();
-    if (connection_aborted()) break;
+    if (connection_aborted()) die();
 }
 
 function parseEntry(stdClass $entry): bool {
@@ -279,7 +280,7 @@ function download(string $url, string $fileName, int $user): bool {
 
     $retryCount = 0;
     while (!$res) {
-        if ($verbose && $retryCount == 0) message("Downloading $url\n");
+        if ($verbose && $retryCount == 0) message("Downloading $url");
         $file = fopen("$mediaDir/$fileName", 'w');
         $curl = curl_init();
         curl_setopt_array($curl, array(
@@ -299,24 +300,31 @@ function download(string $url, string $fileName, int $user): bool {
             $retryCount++;
             if ($retryCount >= 3) {
                 unlink("$mediaDir/$fileName");
-                message("Couldn't download $url\n");
+                message("Couldn't download $url");
                 return false;
             } else
-                message("Retrying for media... ($url)\n");
+                message("Retrying for media... ($url)");
         }
     }
     return true;
 }
 
 function message(string $data): void {
+    global $argv;
+    if (isset($argv)) {
+        echo "$data\n";
+        return;
+    }
     echo "event: message\ndata: $data\n\n";
-    //if (ob_get_contents()) ob_end_flush();
+    if (ob_get_contents()) ob_end_flush();
     flush();
 }
 
 function error(string $data): void {
+    global $argv;
+    if (isset($argv)) die($data);
     echo "event: error\ndata: $data\n\n";
-    //if (ob_get_contents()) ob_end_flush();
+    if (ob_get_contents()) ob_end_flush();
     flush();
     die();
 }
@@ -332,4 +340,4 @@ if (!$useCache) {
     writeTargets($config);
 }
 
-if (!$verbose) message('DONE');
+message('DONE');

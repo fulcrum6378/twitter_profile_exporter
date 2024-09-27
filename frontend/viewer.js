@@ -6,32 +6,36 @@ $(document).ready(function () {
     $('header').css('margin-top', nmt)
     $('#actions').css('margin-top', nmt)
 })
+$('a:not(.page-link):not(.nav-link):not(#link)')
+    .addClass('link-body-emphasis link-underline-opacity-0')
 
 // SYNCHRONIZATION
+const target = $('#target').val()
 let crawler = null
 
-function syncEnded() {
+function syncEnded(button) {
     if (crawler === null) return
     crawler.close()
     crawler = null
-    $('#sync').removeClass('spinning')
+    button.removeClass('spinning')
     $('#crawlHalt').addClass('disabled')
 }
 
-$('#sync').click(function () {
+$('#sync, #syncAll').click(function () {
     $(this).addClass('spinning')
     $('#crawler').show()
-    crawler = new EventSource('crawler.php?t=' + $(this).attr('data-t'))
+    crawler = new EventSource('crawler.php?t=' + target +
+        '&update_only=' + ($(this).is($('#sync')) ? '1' : '0'))
     crawler.onmessage = (event) => {
         $('#crawlEvents').append(event.data + '</br>')
-        if (event.data === 'DONE') syncEnded()
+        if (event.data === 'DONE') syncEnded($(this))
     }
     $('#crawlOK').click(function () {
-        syncEnded()
+        syncEnded($(this))
         $('#crawler').hide()
         location.reload()  // $('#crawlOK, #crawlHalt').click(null)
     })
-    $('#crawlHalt').click(() => syncEnded())
+    $('#crawlHalt').click(() => syncEnded($(this)))
     //crawler.onerror = (err) => alert(err)
 })
 

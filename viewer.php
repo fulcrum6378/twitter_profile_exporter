@@ -54,18 +54,25 @@ date_default_timezone_set('Asia/Tehran');
 <img id="banner" src="media/<?= "$target/$uid/" .
 str_replace('/', '_', $u['banner']) . '.jfif' ?>">
 <header>
+  <input type="hidden" id="target" value="<?= $target ?>">
   <figure>
     <img id="photo" src="media/<?= "$target/$uid/" . profilePhoto($u) ?>">
   </figure>
 
   <div id="actions">
-    <img id="sync" class="btn btn-light border" src="frontend/icons/retweet.svg" data-t="<?= $target ?>">
+    <a href="printer.php?t=<?= $target ?>" target="_blank">
+      <img id="print" class="btn btn-light border" src="frontend/icons/share.svg"
+          title="Get a plain text file containing all independent tweets and retweet from this account.">
+    </a>
+    <img id="syncAll" class="btn btn-light border" src="frontend/icons/retweet.svg"
+        title="Synchronise the entire profile with Twitter/X.">
+    <img id="sync" class="btn btn-light border" src="frontend/icons/connect.svg"
+        title="Check for newer tweets on Twitter/X.">
   </div>
 
   <p class="fs-3 fw-bold mb-0 mt-2"><?= "{$u['name']}"; ?></p>
   <p class="fs-6 text-body-secondary">
-    <a href="https://x.com/<?= "@{$u['user']}"; ?>" target="_blank"
-       class="link-body-emphasis link-underline-opacity-0"><?= "@{$u['user']}"; ?></a>
+    <a href="https://x.com/<?= "@{$u['user']}"; ?>" target="_blank"><?= "@{$u['user']}"; ?></a>
   </p>
   <p class="fs-6 mb-2"><?= "{$u['description']}" ?></p>
 
@@ -77,7 +84,7 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
       <?php endif ?>
       <?php if ($u['link'] != null) : ?>
         <img class="icon" src="frontend/icons/link.svg">
-        <a href="<?= $u['link'] ?>" target="_blank"><?= str_replace('https://', '', $u['link']) ?></a>
+        <a href="<?= $u['link'] ?>" target="_blank" id="link"><?= str_replace('https://', '', $u['link']) ?></a>
         &nbsp;&nbsp;&nbsp;
       <?php endif ?>
     <img class="icon" src="frontend/icons/date.svg">
@@ -142,22 +149,19 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
                 <?php if ($isRetweet) : ?>
                   <p class="retweeted text-body-tertiary">
                     <img class="icon" src="frontend/icons/retweet.svg">
-                    <a href="https://x.com/<?= $u['user'] ?>/status/<?= $retweetId ?>" target="_blank"
-                       class="link-body-emphasis link-underline-opacity-0">
+                    <a href="https://x.com/<?= $u['user'] ?>/status/<?= $retweetId ?>" target="_blank">
                         <?= $u['name'] ?> retweeted at <?= $retweetDate ?>
                     </a>
 
                   </p>
                 <?php endif ?>
               <p class="author text-body-secondary">
-                <a href="viewer.php?t=<?= $target ?>&u=<?= $twt['user'] ?>&sect=1" target="_blank"
-                   class="link-body-emphasis link-underline-opacity-0">
+                <a href="viewer.php?t=<?= $target ?>&u=<?= $twt['user'] ?>&sect=1" target="_blank">
                   <span class="text-body fw-bold"><?= $tu['name'] ?></span>
                   @<span><?= $tu['user'] ?></span>
                 </a>
                 ·
-                <a href="https://x.com/<?= $tu['user'] ?>/status/<?= $twt['id'] ?>" target="_blank"
-                   class="link-body-emphasis link-underline-opacity-0">
+                <a href="https://x.com/<?= $tu['user'] ?>/status/<?= $twt['id'] ?>" target="_blank">
                   <time><?= date('Y.m.d - H:i:s', $twt['time']) ?></time>
                 </a>
               </p>
@@ -190,8 +194,7 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
                           ?>
                         <p class="author text-body-secondary">
                           <img src="media/<?= "$target/{$qut['user']}/" . profilePhoto($quu) ?>">
-                          <a href="viewer.php?t=<?= $target ?>&u=<?= $qut['user'] ?>&sect=1" target="_blank"
-                             class="link-body-emphasis link-underline-opacity-0">
+                          <a href="viewer.php?t=<?= $target ?>&u=<?= $qut['user'] ?>&sect=1" target="_blank">
                             <span class="text-body fw-bold"><?= $quu['name'] ?></span>
                             @<span><?= $quu['user'] ?></span>
                           </a>
