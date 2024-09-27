@@ -236,7 +236,7 @@ if ($twt['media'] != null) :
         </p>
         <p>
           <img class="icon" src="frontend/icons/stat.svg">
-          <?= n($stat['view']) ?? '-' ?>
+          <?= n($stat['view']) ?>
         </p>
         <p>
           <img class="icon" src="frontend/icons/bookmark.svg">
@@ -290,7 +290,8 @@ function profilePhoto(array $user): ?string {
     return str_replace('/', '_', $user['photo']);
 }
 
-function n(int $num): string {
+function n(?int $num): string {
+    if ($num == null) return '-';
     if ($num > 1000000) return intval($num / 1000000) . 'm';
     if ($num > 1000) return intval($num / 1000) . 'k';
     return $num;
