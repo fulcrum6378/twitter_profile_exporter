@@ -314,7 +314,7 @@ function profilePhoto(array $user): ?string {
 }
 
 function n(?int $num): string {
-    if ($num == null) return '-';
+    if (is_null($num)) return '-';
     if ($num > 1000000) return intval($num / 1000000) . 'm';
     if ($num > 1000) return intval($num / 1000) . 'k';
     return $num;
