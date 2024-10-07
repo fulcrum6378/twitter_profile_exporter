@@ -153,6 +153,10 @@ EOF
         $q->execute();
     }
 
+    function queryUsers(): false|SQLite3Result {
+        return $this->db->query("SELECT * FROM User");
+    }
+
     function queryUser(string $id): array|false {
         return $this->db->query("SELECT * FROM User WHERE id = $id LIMIT 1")->fetchArray();
     }
@@ -192,7 +196,7 @@ EOF
 
     function countTweets(
         string $user,
-        int    $section = 1,
+        int    $section = 2,
     ): int {
         $clause = $this->tweetSectionClause($section);
         return $this->db->query("SELECT COUNT(1) FROM Tweet WHERE user = $user $clause")->fetchArray()[0];

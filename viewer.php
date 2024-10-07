@@ -100,6 +100,8 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
     <span class="text-body fw-semibold"><?= n($u['following']) ?></span> Following
     &nbsp;&nbsp;&nbsp;
     <span class="text-body fw-semibold"><?= n($u['followers']) ?></span> Followers
+    &nbsp;&nbsp;&nbsp;
+    <span class="text-body fw-semibold"><?= n($db->countTweets($uid)) ?></span> Tweets
   </p>
 </header>
 
