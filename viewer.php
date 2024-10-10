@@ -4,13 +4,18 @@
 if (isset($_GET['t'])) $target = $_GET['t'];
 if (!isset($target)) die("No target detected!");
 require 'Database.php';
-$db = new Database($target);
+$db = new Database($target, true);
 
 # user
 $users = array();
 $uid = $_GET['u'] ?? $target;
 $u = u($uid);
-if (!$u) die("Unknown user ID: $uid");
+if (!$u) {
+    if ($uid == $target) {
+        header("Location: crawler.php?t=$target&sect=0&max_entries=" . Database::PAGE_LENGTH . "&delay=0");
+        die();
+    } else die("Unknown user ID: $uid");
+}
 
 # page
 $section = isset($_GET['sect']) ? intval($_GET['sect']) : 1;

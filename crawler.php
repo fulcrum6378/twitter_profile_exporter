@@ -18,7 +18,7 @@ $updateOnly = ($argv[2] ?? $_GET['update_only'] ?? '1') != '0';
 /** entries not tweets; set to 0 in order to turn it off. */
 $maxEntries = isset($_GET['max_entries']) ? intval($_GET['max_entries']) : 0;
 $delay = isset($_GET['delay']) ? intval($_GET['delay']) : 10;
-$verbose = ($argv[3] ?? $_GET['verbose'] ?? '1') != '0';
+$sse = ($_GET['sse'] ?? '0') == '1';
 
 # submodules
 $db = new Database($target, true);
@@ -57,7 +57,7 @@ while (!$ended) {
     if ($doFetch) {
         $res = $api->userTweets($section, $target, $cursor);
         if ($res == "") error("Couldn't fetch tweets!");
-        else if ($verbose) message("Fetched page $iFetch");
+        else say("Fetched page $iFetch");
     }
 
     if ($useCache) {
@@ -67,7 +67,7 @@ while (!$ended) {
             fwrite($j, $res);
         else {
             $res = fread($j, filesize($cacheFile));
-            if ($verbose) message("Using cached page $iFetch");
+            say("Using cached page $iFetch");
         }
         fclose($j);
     } else
@@ -102,7 +102,7 @@ while (!$ended) {
 
     if (connection_aborted()) die();
     if ($doFetch && !$ended) {
-        if ($verbose) message("Waiting in order not to be detected as a bot ($delay seconds)...");
+        say("Waiting in order not to be detected as a bot ($delay seconds)...");
         sleep($delay);
     }
     if (connection_aborted()) die();
@@ -130,7 +130,7 @@ function parseEntry(stdClass $entry): bool {
 
 function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
     if (!property_exists($tweet, 'rest_id')) return true; // TweetTombstone
-    global $db, $parsedUsers, $verbose, $iTarget;
+    global $db, $parsedUsers, $iTarget;
     $tweetId = intval($tweet->rest_id);
 
     # User
@@ -138,7 +138,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
     if (!in_array($userId, $parsedUsers)) {
         $ul = $tweet->core->user_results->result->legacy;
         $userExistsInDb = $db->checkIfRowExists($db->User, $userId);
-        if (!$userExistsInDb) if ($verbose) message("Processing user @$ul->screen_name (id:$userId)\n");
+        if (!$userExistsInDb) say("Processing user @$ul->screen_name (id:$userId)\n");
         $link = property_exists($ul, 'url') ? $ul->entities->url->urls[0]->expanded_url : null;
         $pinnedTweet = (count($ul->pinned_tweet_ids_str) > 0) ? $ul->pinned_tweet_ids_str[0] : null;
 
@@ -186,7 +186,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
     }
 
 
-    if ($verbose) message("Processing tweet $tweetId\n");
+    say("Processing tweet $tweetId\n");
     $important = $userId == $iTarget || $retweetFromUser == $iTarget;
 
     # main text
@@ -238,7 +238,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
         try {
             download($medUrl, "$medId.$medExt", $userId);
         } catch (TypeError $e) {
-            message($e);
+            say($e);
             error("\n$tweetId");
         }
 
@@ -270,7 +270,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
 
 function download(string $url, string $fileName, int $user): bool {
     # ensure existence of itself and its directory
-    global $target, $verbose;
+    global $target;
     $mediaDir = "media/$target/$user";
     if (!file_exists($mediaDir)) {
         mkdir($mediaDir, recursive: true);
@@ -280,7 +280,7 @@ function download(string $url, string $fileName, int $user): bool {
 
     $retryCount = 0;
     while (!$res) {
-        if ($verbose && $retryCount == 0) message("Downloading $url");
+        if ($retryCount == 0) say("Downloading $url");
         $file = fopen("$mediaDir/$fileName", 'w');
         $curl = curl_init();
         curl_setopt_array($curl, array(
@@ -300,22 +300,19 @@ function download(string $url, string $fileName, int $user): bool {
             $retryCount++;
             if ($retryCount >= 3) {
                 unlink("$mediaDir/$fileName");
-                message("Couldn't download $url");
+                say("Couldn't download $url");
                 return false;
             } else
-                message("Retrying for media... ($url)");
+                say("Retrying for media... ($url)");
         }
     }
     return true;
 }
 
-function message(string $data): void {
-    global $argv;
-    if (isset($argv)) {
-        echo "$data\n";
-        return;
-    }
-    echo "event: message\ndata: $data\n\n";
+function say(string $data): void {
+    global $sse;
+    if ($sse) echo "event: message\ndata: $data\n\n";
+    else echo "$data\n";
     if (ob_get_contents()) ob_end_flush();
     flush();
 }
@@ -340,4 +337,4 @@ if (!$useCache) {
     writeTargets($config);
 }
 
-message('DONE');
+say('DONE');

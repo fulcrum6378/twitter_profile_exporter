@@ -1,4 +1,5 @@
 headers.json
+headers*.json
 targets.json
 cache/
 databases/

@@ -25,7 +25,7 @@ $('#sync, #syncAll').click(function () {
     $(this).addClass('spinning')
     $('#crawler').show()
     crawler = new EventSource('crawler.php?t=' + target +
-        '&update_only=' + ($(this).is($('#sync')) ? '1' : '0'))
+        '&update_only=' + ($(this).is($('#sync')) ? '1' : '0') + '&sse=1')
     crawler.onmessage = (event) => {
         $('#crawlEvents').append(event.data + '</br>')
         if (event.data === 'DONE') syncEnded($(this))
