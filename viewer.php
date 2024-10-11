@@ -91,9 +91,7 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
 <?php if ($u['link'] != null) : ?>
     <img class="icon" src="frontend/icons/link.svg">
     <a href="<?= $u['link'] ?>" target="_blank" id="link">
-      <?= str_replace('https://', '', $u['link']) ?>
-
-    </a>
+      <?= str_replace('https://', '', $u['link']) ?></a>
     &nbsp;&nbsp;&nbsp;
 <?php endif ?>
     <img class="icon" src="frontend/icons/date.svg">
@@ -267,7 +265,7 @@ while ($ent = $tweets->fetchArray()) :
 <?php
             else:
 ?>
-          This tweet is from an account that no longer exists.
+          The quoted tweet is unavailable.
 <?php
             endif;
 ?>
@@ -350,7 +348,8 @@ function profilePhoto(array $user): ?string {
 
 function n(?int $num): string {
     if (is_null($num)) return '-';
-    if ($num > 1000000) return intval($num / 1000000) . 'm';
-    if ($num > 1000) return intval($num / 1000) . 'k';
+    //if ($num >= 1000000000) return intval($num / 1000000000) . 'b';
+    if ($num >= 1000000) return intval($num / 1000000) . 'm';
+    if ($num >= 10000) return intval($num / 1000) . 'k';
     return $num;
 }

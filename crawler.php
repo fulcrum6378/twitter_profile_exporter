@@ -138,7 +138,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
     if (!in_array($userId, $parsedUsers)) {
         $ul = $tweet->core->user_results->result->legacy;
         $userExistsInDb = $db->checkIfRowExists($db->User, $userId);
-        if (!$userExistsInDb) say("Processing user @$ul->screen_name (id:$userId)\n");
+        if (!$userExistsInDb) say("Processing user @$ul->screen_name (id:$userId)");
         $link = property_exists($ul, 'url') ? $ul->entities->url->urls[0]->expanded_url : null;
         $pinnedTweet = (count($ul->pinned_tweet_ids_str) > 0) ? $ul->pinned_tweet_ids_str[0] : null;
 
@@ -186,7 +186,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
     }
 
 
-    say("Processing tweet $tweetId\n");
+    say("Processing tweet $tweetId");
     $important = $userId == $iTarget || $retweetFromUser == $iTarget;
 
     # main text
