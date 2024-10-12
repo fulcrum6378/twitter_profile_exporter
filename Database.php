@@ -157,8 +157,8 @@ EOF
         return $this->db->query("SELECT * FROM User");
     }
 
-    function queryUser(string $id): array|false {
-        return $this->db->query("SELECT * FROM User WHERE id = $id LIMIT 1")->fetchArray();
+    function queryUser(string $id, string $columns = '*'): array|false {
+        return $this->db->query("SELECT $columns FROM User WHERE id = $id LIMIT 1")->fetchArray();
     }
 
     function insertTweet(

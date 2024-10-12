@@ -130,33 +130,44 @@ function parseEntry(stdClass $entry): bool {
 
 function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
     if (!property_exists($tweet, 'rest_id')) return true; // TweetTombstone
-    global $db, $parsedUsers, $iTarget;
+    global $parsedUsers, $db, $iTarget;
     $tweetId = intval($tweet->rest_id);
 
     # User
     $userId = intval($tweet->core->user_results->result->rest_id);
     if (!in_array($userId, $parsedUsers)) {
         $ul = $tweet->core->user_results->result->legacy;
-        $userExistsInDb = $db->checkIfRowExists($db->User, $userId);
-        if (!$userExistsInDb) say("Processing user @$ul->screen_name (id:$userId)");
-        $link = property_exists($ul, 'url') ? $ul->entities->url->urls[0]->expanded_url : null;
-        $pinnedTweet = (count($ul->pinned_tweet_ids_str) > 0) ? $ul->pinned_tweet_ids_str[0] : null;
+        $dbUser = $db->queryUser($userId, 'photo,banner');
+        if (!$dbUser) say("Processing user @$ul->screen_name (id:$userId)");
 
         # process user images
         if (property_exists($ul, 'profile_image_url_https')) {
             $photoUrl = str_replace('_normal', '', $ul->profile_image_url_https);
             $photo = substr($photoUrl, strlen(TWIMG_IMAGES));
-            download($photoUrl, str_replace('/', '_', $photo), $userId);
+            if (download($photoUrl, str_replace('/', '_', $photo), $userId) == 0
+                && $dbUser['photo'] != null && $iTarget != $userId) {
+                unlink("media/$iTarget/$userId" .
+                    str_replace('/', '_', $dbUser['photo']));
+                say('Old profile photo was removed.');
+            }
         } else
             $photo = null;
         if (property_exists($ul, 'profile_banner_url')) {
             $banner = substr($ul->profile_banner_url, strlen(TWIMG_BANNERS));
-            download($ul->profile_banner_url, str_replace('/', '_', $banner) . '.jfif', $userId);
+            if (download($ul->profile_banner_url,
+                    str_replace('/', '_', $banner) . '.jfif', $userId
+                ) == 0 && $dbUser['banner'] != null && $iTarget != $userId) {
+                unlink("media/$iTarget/$userId" .
+                    str_replace('/', '_', $dbUser['banner']) . '.jfif');
+                say('Old profile banner was removed.');
+            }
         } else
             $banner = null;
 
         # insert/update User
-        if (!$userExistsInDb)
+        $link = property_exists($ul, 'url') ? $ul->entities->url->urls[0]->expanded_url : null;
+        $pinnedTweet = (count($ul->pinned_tweet_ids_str) > 0) ? $ul->pinned_tweet_ids_str[0] : null;
+        if (!$dbUser)
             $db->insertUser($userId,
                 $ul->screen_name, $ul->name, $ul->description,
                 strtotime($ul->created_at), $ul->location, $photo, $banner, $link,
@@ -268,16 +279,19 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
     return true;
 }
 
-function download(string $url, string $fileName, int $user): bool {
+/** @return int 0(OK), 1(already exists), 2(download failed) */
+function download(string $url, string $fileName, int $user): int {
     # ensure existence of itself and its directory
     global $target;
     $mediaDir = "media/$target/$user";
-    if (!file_exists($mediaDir)) {
+    if (!file_exists($mediaDir))
         mkdir($mediaDir, recursive: true);
-        $res = false;
-    } else
-        $res = file_exists("$mediaDir/$fileName") && filesize("$mediaDir/$fileName") > 0;
+    else
+        if (file_exists("$mediaDir/$fileName") && filesize("$mediaDir/$fileName") > 0) {
+            return 1;
+        }
 
+    $res = false;
     $retryCount = 0;
     while (!$res) {
         if ($retryCount == 0) say("Downloading $url");
@@ -301,12 +315,12 @@ function download(string $url, string $fileName, int $user): bool {
             if ($retryCount >= 3) {
                 unlink("$mediaDir/$fileName");
                 say("Couldn't download $url");
-                return false;
+                return 2;
             } else
                 say("Retrying for media... ($url)");
         }
     }
-    return true;
+    return 0;
 }
 
 function say(string $data): void {
