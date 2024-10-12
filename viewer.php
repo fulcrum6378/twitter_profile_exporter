@@ -71,7 +71,8 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
   <div id="actions">
     <a href="printer.php?t=<?= $target ?>" target="_blank">
       <img id="print" class="btn btn-light border" src="frontend/icons/share.svg"
-          title="Get a plain text file containing all independent tweets and retweet from this account.">
+          title="Get a plain text file containing all independent tweets and retweets from this profile,
+usually to be analysed by AI.">
     </a>
     <img id="syncAll" class="btn btn-light border" src="frontend/icons/retweet.svg"
         title="Synchronise the entire profile with Twitter/X.">
@@ -167,7 +168,8 @@ while ($ent = $tweets->fetchArray()) :
 ?>
         <p class="retweeted">
           <img class="icon" src="frontend/icons/retweet.svg">
-          <a href="https://x.com/<?= $u['user'] ?>/status/<?= $retweetId ?>" target="_blank" class=" text-body-tertiary">
+          <a href="https://x.com/<?= $u['user'] ?>/status/<?= $retweetId ?>"
+              target="_blank" class=" text-body-tertiary">
             <?= $u['name'] ?> retweeted at <?= $retweetDate ?>
 
           </a>

@@ -152,8 +152,8 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
             $photoUrl = str_replace('_normal', '', $ul->profile_image_url_https);
             $photo = substr($photoUrl, strlen(TWIMG_IMAGES));
             if (download($photoUrl, str_replace('/', '_', $photo), $userId) == 0
-                && $dbUser['photo'] != null && $iTarget != $userId) {
-                unlink("media/$iTarget/$userId" .
+                && $dbUser && $dbUser['photo'] != null && $iTarget != $userId) {
+                unlink("media/$iTarget/$userId/" .
                     str_replace('/', '_', $dbUser['photo']));
                 say('Old profile photo was removed.');
             }
@@ -163,8 +163,8 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
             $banner = substr($ul->profile_banner_url, strlen(TWIMG_BANNERS));
             if (download($ul->profile_banner_url,
                     str_replace('/', '_', $banner) . '.jfif', $userId
-                ) == 0 && $dbUser['banner'] != null && $iTarget != $userId) {
-                unlink("media/$iTarget/$userId" .
+                ) == 0 && $dbUser && $dbUser['banner'] != null && $iTarget != $userId) {
+                unlink("media/$iTarget/$userId/" .
                     str_replace('/', '_', $dbUser['banner']) . '.jfif');
                 say('Old profile banner was removed.');
             }
