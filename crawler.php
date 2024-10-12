@@ -9,10 +9,11 @@ set_time_limit(0);
 # process the request
 $target = $argv[1] ?? $_GET['t'];
 $section = isset($_GET['sect']) ? match ($_GET['sect']) {
-    '0' => ProfileSection::Tweets,
-    '2' => ProfileSection::Media,
-    default => ProfileSection::Replies
-} : ProfileSection::Replies;
+    '0' => ProfileSect::Tweets,
+    '2' => ProfileSect::Media,
+    default => ProfileSect::Replies
+} : ProfileSect::Replies;
+$search = isset($_GET['search']) ? urldecode($_GET['search']) : null;
 $useCache = isset($_GET['use_cache']) && $_GET['use_cache'] == '1';
 $updateOnly = ($argv[2] ?? $_GET['update_only'] ?? '1') != '0';
 /** entries not tweets; set to 0 in order to turn it off. */
@@ -52,18 +53,21 @@ while (!$ended) {
         $cacheExists = file_exists($cacheFile);
     }
     $doFetch = !$useCache || !$cacheExists;
+    $res = ''; // in order to silent IDE warnings.
 
     # fetch tweets from the Twitter/X API
     if ($doFetch) {
-        $res = $api->userTweets($section, $target, $cursor);
-        if ($res == "") error("Couldn't fetch tweets!");
+        if ($search == null)
+            $res = $api->userTweets($section, $target, $cursor);
+        else
+            $res = $api->searchTweets($search, $cursor);
+        if ($res == '') error("Couldn't fetch tweets!");
         else say("Fetched page $iFetch");
     }
 
     if ($useCache) {
         $j = fopen($cacheFile, $cacheExists ? 'r' : 'w');
         if (!$cacheExists)
-            /** @noinspection PhpUndefinedVariableInspection (true negative) */
             fwrite($j, $res);
         else {
             $res = fread($j, filesize($cacheFile));
@@ -75,10 +79,13 @@ while (!$ended) {
 
     if (connection_aborted()) die();
 
-    /** @noinspection PhpUndefinedVariableInspection (true negative) */
-    foreach (json_decode($res)->data->user->result->timeline_v2->timeline->instructions as $instruction) {
+    if ($search == null)
+        $instructions = json_decode($res)->data->user->result->timeline_v2->timeline->instructions;
+    else
+        $instructions = json_decode($res)->data->search_by_raw_query->search_timeline->timeline->instructions;
+    foreach ($instructions as $instruction) {
         switch ($instruction->type) {
-            case 'TimelinePinEntry':
+            case 'TimelinePinEntry':  // only in userTweets()
                 parseEntry($instruction->entry);
                 break;
             case 'TimelineAddEntries':

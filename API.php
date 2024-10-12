@@ -5,7 +5,8 @@ class API {
     private const string BASE_URL = 'https://x.com/i/api/graphql/';
 
     private array $headers = array();
-    private string $featuresAndFieldToggles;
+    private string $apiFeatures;
+    private string $apiFieldToggles;
 
     function __construct() {
         # parse the intercepted headers
@@ -13,7 +14,7 @@ class API {
             $this->headers[] = $key . ': ' . $value;
 
         /** @noinspection SpellCheckingInspection */
-        $this->featuresAndFieldToggles = '&features=' . urlencode('{' .
+        $this->apiFeatures = '&features=' . urlencode('{' .
                 '"rweb_tipjar_consumption_enabled":true,' .
                 '"responsive_web_graphql_exclude_directive_enabled":true,' .
                 '"verified_phone_label_enabled":false,' .
@@ -37,8 +38,8 @@ class API {
                 '"longform_notetweets_rich_text_read_enabled":true,' .
                 '"longform_notetweets_inline_media_enabled":true,' .
                 '"responsive_web_enhance_cards_enabled":false' .
-                '}') .
-            '&fieldToggles=' . urlencode('{"' .
+                '}');
+        $this->apiFieldToggles = '&fieldToggles=' . urlencode('{"' .
                 'withArticlePlainText":false' .
                 '}');
     }
@@ -63,35 +64,66 @@ class API {
         return $res ?: '';
     }
 
-    function userTweets(ProfileSection $sect, string $userId, string $cursor = null, int $count = 20): string {
-        $medOrLikes = $sect == ProfileSection::Media || $sect == ProfileSection::Likes;
+    function userTweets(
+        ProfileSect $sect,
+        string      $userId,
+        string      $cursor = null,
+        int         $count = 20
+    ): string {
+        $medOrLikes = $sect == ProfileSect::Media || $sect == ProfileSect::Likes;
         /** @noinspection SpellCheckingInspection */
         return $this->get(API::BASE_URL .
             match ($sect) {
-                ProfileSection::Tweets => 'E3opETHurmVJflFsUBVuUQ/UserTweets',
-                ProfileSection::Replies => 'bt4TKuFz4T7Ckk-VvQVSow/UserTweetsAndReplies',
-                ProfileSection::Media => 'dexO_2tohK86JDudXXG3Yw/UserMedia',
-                ProfileSection::Likes => 'aeJWz--kknVBOl7wQ7gh7Q/Likes',
+                ProfileSect::Tweets => 'E3opETHurmVJflFsUBVuUQ/UserTweets',
+                ProfileSect::Replies => 'bt4TKuFz4T7Ckk-VvQVSow/UserTweetsAndReplies',
+                ProfileSect::Media => 'dexO_2tohK86JDudXXG3Yw/UserMedia',
+                ProfileSect::Likes => 'aeJWz--kknVBOl7wQ7gh7Q/Likes',
             } .
             '?variables=' . urlencode('{' .
                 '"userId":"' . $userId . '",' .
                 '"count":' . $count . ',' . // maximum: 20
                 ($cursor ? ('"cursor":"' . $cursor . '",') : '') .
                 '"includePromotedContent":false,' . // true
-                (($sect == ProfileSection::Tweets) ? '"withQuickPromoteEligibilityTweetFields":false,' : '') . // true
-                (($sect == ProfileSection::Replies) ? '"withCommunity":true,' : '') .
+                (($sect == ProfileSect::Tweets) ? '"withQuickPromoteEligibilityTweetFields":false,' : '') . // true
+                (($sect == ProfileSect::Replies) ? '"withCommunity":true,' : '') .
                 ($medOrLikes ? '"withClientEventToken":false,' : '') .
                 ($medOrLikes ? '"withBirdwatchNotes":false,' : '') .
                 '"withVoice":true,' .
                 '"withV2Timeline":true' .
-                '}') . $this->featuresAndFieldToggles
+                '}') . $this->apiFeatures . $this->apiFieldToggles
+        );
+    }
+
+    function searchTweets(
+        string     $q,
+        string     $cursor = null,
+        SearchSect $sect = SearchSect::Latest,
+        int        $count = 20
+    ): string {
+        /** @noinspection SpellCheckingInspection */
+        return $this->get(API::BASE_URL . 'MJpyQGqgklrVl_0X9gNy3A/SearchTimeline' .
+            '?variables=' . urlencode('{' .
+                '"rawQuery":"' . $q . '",' .
+                '"count":' . $count . ',' .
+                ($cursor ? ('"cursor":"' . $cursor . '",') : '') .
+                '"querySource":"typed_query",' .
+                '"product":"' . $sect->name . '"' .
+                '}') . $this->apiFeatures
         );
     }
 }
 
-enum ProfileSection {
+enum ProfileSect {
     case Tweets;
     case Replies;
     case Media;
     case Likes;
+}
+
+enum SearchSect {
+    case Top;
+    case Latest;
+    case People;
+    case Media;
+    case Lists;
 }

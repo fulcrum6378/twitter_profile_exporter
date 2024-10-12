@@ -38,6 +38,7 @@ $('#sync, #syncAll').click(function () {
     $('#crawlHalt').click(() => syncEnded($(this)))
     //crawler.onerror = (err) => alert(err)
 })
+// TODO crawler.php?t=1754604672583913472&search=from%3A%40fulcrum6378%20to%3A%40Arshida20244&max_entries=20
 
 // PAGINATION
 const PARAM_SECTION = 'sect'

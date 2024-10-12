@@ -1,8 +1,14 @@
+# user data
+cache/
+databases/
+!databases/.htaccess
+media/
+
+# front-end assets
+frontend/bootstrap*
+frontend/jquery*
+
+# configurations
 headers.json
 headers*.json
 targets.json
-cache/
-databases/
-frontend/bootstrap*
-frontend/jquery*
-media/

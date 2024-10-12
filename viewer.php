@@ -30,9 +30,13 @@ $pMin = 0;
 $pMax = $pageCount - 1;
 if ($page > MAX_PAGE_LINKS) $pMin = $page - MAX_PAGE_LINKS;
 if (($pMax - $page) > MAX_PAGE_LINKS) $pMax = $page + MAX_PAGE_LINKS;
-$pRng = range($pMin, $pMax);
-if ($pMin > 0) array_unshift($pRng, 0);
-if ($pMax < $pageCount - 1) $pRng[] = $pageCount - 1;
+if ($pMax != 0)
+    $pRng = array(0);
+else {
+    $pRng = range($pMin, $pMax);
+    if ($pMin > 0) array_unshift($pRng, 0);
+    if ($pMax < $pageCount - 1) $pRng[] = $pageCount - 1;
+}
 
 # miscellaneous
 $rtl = ['fa', 'ar', 'he'];
