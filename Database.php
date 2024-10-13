@@ -1,6 +1,5 @@
 <?php /** @noinspection DuplicatedCode */
 
-/** Requires the `sqlite3` extension to be enabled. */
 class Database {
     public string $User = 'User';
     public string $Tweet = 'Tweet';
@@ -11,6 +10,7 @@ class Database {
 
     const int PAGE_LENGTH = 20;
 
+    /** Requires the `sqlite3` extension to be enabled. */
     function __construct(string $userId, bool $createIfNotExists = false) {
         $dbDir = 'databases';
         if (!file_exists($dbDir)) mkdir($dbDir);

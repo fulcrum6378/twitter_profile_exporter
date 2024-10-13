@@ -63,7 +63,6 @@ date_default_timezone_set('Asia/Tehran');
 <img id="banner" src="media/<?= "$target/$uid/" .
 str_replace('/', '_', $u['banner']) . '.jfif' ?>">
 <header>
-  <input type="hidden" id="target" value="<?= $target ?>">
   <figure>
     <img id="photo" src="media/<?= "$target/$uid/" . profilePhoto($u) ?>">
   </figure>
@@ -71,13 +70,11 @@ str_replace('/', '_', $u['banner']) . '.jfif' ?>">
   <div id="actions">
     <a href="printer.php?t=<?= $target ?>" target="_blank">
       <img id="print" class="btn btn-light border" src="frontend/icons/share.svg"
-          title="Get a plain text file containing all independent tweets and retweets from this profile,
+           title="Get a plain text file containing all independent tweets and retweets from this profile,
 usually to be analysed by AI.">
     </a>
-    <img id="syncAll" class="btn btn-light border" src="frontend/icons/retweet.svg"
-        title="Synchronise the entire profile with Twitter/X.">
-    <img id="sync" class="btn btn-light border" src="frontend/icons/connect.svg"
-        title="Check for newer tweets on Twitter/X.">
+    <img id="crawl" class="btn btn-light border" src="frontend/icons/connect.svg"
+         title="Crawl for tweets on Twitter/X.">
   </div>
 
   <p class="fs-3 fw-bold mb-0 mt-2"><?= "{$u['name']}"; ?></p>
@@ -322,12 +319,43 @@ endwhile;
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Synchronisation</h5>
+        <h4 class="modal-title">Crawl</h4>
       </div>
-      <code class="modal-body" id="crawlEvents"></code>
+      <div class="modal-body">
+        <form id="crawlForm">
+          <input type="hidden" id="target" name="t" value="<?= $target ?>">
+          <div>
+            Profile:
+            &nbsp;&nbsp;
+            <input class="btn-check" type="radio" name="sect" value="1" id="crwPfTweets">
+            <label class="btn btn-outline-primary" for="crwPfTweets">Tweets</label>
+            <input class="btn-check" type="radio" name="sect" value="2" id="crwPfReplies" checked>
+            <label class="btn btn-outline-primary" for="crwPfReplies">Replies</label>
+            <input class="btn-check" type="radio" name="sect" value="3" id="crwPfMedia">
+            <label class="btn btn-outline-primary" for="crwPfMedia">Media</label>
+            <input class="btn-check" type="radio" name="sect" value="4" id="crwPfLikes">
+            <label class="btn btn-outline-primary" for="crwPfLikes">Likes</label>
+          </div>
+
+          <div class="mt-4">
+            Search:
+            &nbsp;&nbsp;
+            <input class="btn-check crwSc" type="radio" name="sect" value="1" id="crwScTop">
+            <label class="btn btn-outline-primary" for="crwScTop">Top</label>
+            <input class="btn-check crwSc" type="radio" name="sect" value="2" id="crwScLatest">
+            <label class="btn btn-outline-primary" for="crwScLatest">Latest</label>
+            <input class="btn-check crwSc" type="radio" name="sect" value="3" id="crwScMedia">
+            <label class="btn btn-outline-primary" for="crwScMedia">Media</label>
+          </div>
+          <input type="text" name="search" id="crwSearch" class="form-control mt-2" placeholder="Search query..."
+                 value="from:<?= $u['user'] ?> " disabled>
+        </form>
+        <code id="crawlEvents"></code>
+      </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="crawlHalt">Halt</button>
-        <button type="button" class="btn btn-primary" id="crawlOK">OK</button>
+        <button type="button" class="btn btn-secondary" id="crawlCancel">Cancel</button>
+        <button type="button" class="btn btn-primary" id="crawlGo">Go</button>
+        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" id="crawlHalt">Halt!</button>
       </div>
     </div>
   </div>

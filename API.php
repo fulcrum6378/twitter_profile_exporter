@@ -1,6 +1,5 @@
 <?php
 
-/** Requires the `curl` extension to be enabled. */
 class API {
     private const string BASE_URL = 'https://x.com/i/api/graphql/';
 
@@ -8,6 +7,7 @@ class API {
     private string $apiFeatures;
     private string $apiFieldToggles;
 
+    /** Requires the `curl` extension to be enabled. */
     function __construct() {
         # parse the intercepted headers
         foreach (json_decode(file_get_contents('headers.json')) as $key => $value)
@@ -64,28 +64,33 @@ class API {
         return $res ?: '';
     }
 
+    /**
+     * @param string $userId Twitter ID
+     * @param int $sect 1=>Tweets, 2=>Replies, 3=>Media, 4=>Likes
+     * @return string JSON text
+     */
     function userTweets(
-        ProfileSect $sect,
-        string      $userId,
-        string      $cursor = null,
-        int         $count = 20
+        string $userId,
+        int    $sect = 2,
+        string $cursor = null,
+        int    $count = 20
     ): string {
-        $medOrLikes = $sect == ProfileSect::Media || $sect == ProfileSect::Likes;
+        $medOrLikes = $sect == 3 || $sect == 4;
         /** @noinspection SpellCheckingInspection */
         return $this->get(API::BASE_URL .
             match ($sect) {
-                ProfileSect::Tweets => 'E3opETHurmVJflFsUBVuUQ/UserTweets',
-                ProfileSect::Replies => 'bt4TKuFz4T7Ckk-VvQVSow/UserTweetsAndReplies',
-                ProfileSect::Media => 'dexO_2tohK86JDudXXG3Yw/UserMedia',
-                ProfileSect::Likes => 'aeJWz--kknVBOl7wQ7gh7Q/Likes',
+                1 => 'E3opETHurmVJflFsUBVuUQ/UserTweets',
+                2 => 'bt4TKuFz4T7Ckk-VvQVSow/UserTweetsAndReplies',
+                3 => 'dexO_2tohK86JDudXXG3Yw/UserMedia',
+                4 => 'aeJWz--kknVBOl7wQ7gh7Q/Likes',
             } .
             '?variables=' . urlencode('{' .
                 '"userId":"' . $userId . '",' .
                 '"count":' . $count . ',' . // maximum: 20
                 ($cursor ? ('"cursor":"' . $cursor . '",') : '') .
                 '"includePromotedContent":false,' . // true
-                (($sect == ProfileSect::Tweets) ? '"withQuickPromoteEligibilityTweetFields":false,' : '') . // true
-                (($sect == ProfileSect::Replies) ? '"withCommunity":true,' : '') .
+                (($sect == 1) ? '"withQuickPromoteEligibilityTweetFields":false,' : '') . // true
+                (($sect == 2) ? '"withCommunity":true,' : '') .
                 ($medOrLikes ? '"withClientEventToken":false,' : '') .
                 ($medOrLikes ? '"withBirdwatchNotes":false,' : '') .
                 '"withVoice":true,' .
@@ -94,11 +99,16 @@ class API {
         );
     }
 
+    /**
+     * @param string $q search query
+     * @param int $sect 1=>Top, 2=>Latest, 3=>People, 4=>Media, 5=>Lists
+     * @return string JSON text
+     */
     function searchTweets(
-        string     $q,
-        string     $cursor = null,
-        SearchSect $sect = SearchSect::Latest,
-        int        $count = 20
+        string $q,
+        int    $sect = 2,
+        string $cursor = null,
+        int    $count = 20
     ): string {
         /** @noinspection SpellCheckingInspection */
         return $this->get(API::BASE_URL . 'MJpyQGqgklrVl_0X9gNy3A/SearchTimeline' .
@@ -107,23 +117,14 @@ class API {
                 '"count":' . $count . ',' .
                 ($cursor ? ('"cursor":"' . $cursor . '",') : '') .
                 '"querySource":"typed_query",' .
-                '"product":"' . $sect->name . '"' .
+                '"product":"' . match ($sect) {
+                    1 => 'Top',
+                    2 => 'Latest',
+                    3 => 'People',
+                    4 => 'Media',
+                    5 => 'Lists',
+                } . '"' .
                 '}') . $this->apiFeatures
         );
     }
-}
-
-enum ProfileSect {
-    case Tweets;
-    case Replies;
-    case Media;
-    case Likes;
-}
-
-enum SearchSect {
-    case Top;
-    case Latest;
-    case People;
-    case Media;
-    case Lists;
 }

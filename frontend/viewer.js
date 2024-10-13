@@ -9,11 +9,47 @@ $(document).ready(function () {
 $('a:not(.page-link):not(.nav-link):not(#link)')
     .addClass('link-body-emphasis link-underline-opacity-0')
 
-// SYNCHRONIZATION
-const target = $('#target').val()
-let crawler = null
 
-function syncEnded(button) {
+// CRAWLER
+let crawler = null
+let crawled = false
+$('#crawlForm [name=sect]').change(function () {
+    if ($(this).hasClass('crwSc')) $('#crwSearch').removeAttr("disabled")
+    else $('#crwSearch').attr("disabled", true)
+})
+$('#crawl').click(function () {
+    $('#crawlEvents').empty()
+    $('#crawlHalt').hide()
+    $('#crawlGo').show()
+    $('#crawler').fadeIn()
+})
+$('#crawlGo').click(function () {
+    $('#crawlGo').hide()
+    $('#crawlForm').hide()
+    $('#crawlHalt').show()
+    $(this).addClass('spinning')
+
+    crawler = new EventSource('crawler.php?t=' + target +
+        '&update_only=' + ($(this).is($('#sync')) ? '1' : '0') + '&sse=1')
+    crawler.onmessage = (event) => {
+        $('#crawlEvents').append(event.data + '</br>')
+        if (event.data === 'DONE') crawlEnded($(this))
+    }
+    //crawler.onerror = (err) => alert(err)
+    crawled = true
+})
+$('#crawlHalt').click(() => {
+    crawlEnded($(this))
+    $('#crawlHalt').hide()
+    $('#crawlOK').show()
+})
+$('#crawlCancel').click(function () {
+    crawlEnded($(this))
+    $('#crawler').fadeOut()
+    if (crawled) location.reload()
+})
+
+function crawlEnded(button) {
     if (crawler === null) return
     crawler.close()
     crawler = null
@@ -21,24 +57,6 @@ function syncEnded(button) {
     $('#crawlHalt').addClass('disabled')
 }
 
-$('#sync, #syncAll').click(function () {
-    $(this).addClass('spinning')
-    $('#crawler').show()
-    crawler = new EventSource('crawler.php?t=' + target +
-        '&update_only=' + ($(this).is($('#sync')) ? '1' : '0') + '&sse=1')
-    crawler.onmessage = (event) => {
-        $('#crawlEvents').append(event.data + '</br>')
-        if (event.data === 'DONE') syncEnded($(this))
-    }
-    $('#crawlOK').click(function () {
-        syncEnded($(this))
-        $('#crawler').hide()
-        location.reload()  // $('#crawlOK, #crawlHalt').click(null)
-    })
-    $('#crawlHalt').click(() => syncEnded($(this)))
-    //crawler.onerror = (err) => alert(err)
-})
-// TODO crawler.php?t=1754604672583913472&search=from%3A%40fulcrum6378%20to%3A%40Arshida20244&max_entries=20
 
 // PAGINATION
 const PARAM_SECTION = 'sect'

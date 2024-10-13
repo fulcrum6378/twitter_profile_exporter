@@ -1,28 +1,24 @@
 <?php
-require 'API.php';
-require 'Database.php';
-
-# global settings
-if (isset($argv)) chdir(dirname($_SERVER['PHP_SELF']));
-set_time_limit(0);
 
 # process the request
 $target = $argv[1] ?? $_GET['t'];
-$section = isset($_GET['sect']) ? match ($_GET['sect']) {
-    '0' => ProfileSect::Tweets,
-    '2' => ProfileSect::Media,
-    default => ProfileSect::Replies
-} : ProfileSect::Replies;
 $search = isset($_GET['search']) ? urldecode($_GET['search']) : null;
-$useCache = isset($_GET['use_cache']) && $_GET['use_cache'] == '1';
+$sect = isset($_GET['sect']) ? intval($_GET['sect']) : 2;
 $updateOnly = ($argv[2] ?? $_GET['update_only'] ?? '1') != '0';
+$useCache = isset($_GET['use_cache']) && $_GET['use_cache'] == '1';
 /** entries not tweets; set to 0 in order to turn it off. */
 $maxEntries = isset($_GET['max_entries']) ? intval($_GET['max_entries']) : 0;
 $delay = isset($_GET['delay']) ? intval($_GET['delay']) : 10;
 $sse = ($_GET['sse'] ?? '0') == '1';
 
+# global settings
+if (isset($argv)) chdir(dirname($_SERVER['PHP_SELF']));
+set_time_limit(0);
+
 # submodules
+require 'Database.php';
 $db = new Database($target, true);
+require 'API.php';
 $api = new API();
 
 # constants
@@ -35,7 +31,7 @@ header('Content-Type: text/event-stream');
 header('Cache-Control: no-cache');
 header('Connection: keep-alive');
 
-# loop on consecutive requests
+# loop on consecutive requests to Twitter API
 if ($useCache) {
     $cacheDir = "cache/$target";
     if (!file_exists($cacheDir)) mkdir($cacheDir, recursive: true);
@@ -58,9 +54,9 @@ while (!$ended) {
     # fetch tweets from the Twitter/X API
     if ($doFetch) {
         if ($search == null)
-            $res = $api->userTweets($section, $target, $cursor);
+            $res = $api->userTweets($target, $sect, $cursor);
         else
-            $res = $api->searchTweets($search, $cursor);
+            $res = $api->searchTweets($search, $sect, $cursor);
         if ($res == '') error("Couldn't fetch tweets!");
         else say("Fetched page $iFetch");
     }
