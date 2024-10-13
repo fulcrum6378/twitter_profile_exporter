@@ -340,7 +340,7 @@ endwhile;
           <div class="mt-4">
             Search:
             &nbsp;&nbsp;
-            <input class="btn-check crwSc" type="radio" name="sect" value="1" id="crwScTop">
+            <input class="btn-check crwSc crwUnsorted" type="radio" name="sect" value="1" id="crwScTop">
             <label class="btn btn-outline-primary" for="crwScTop">Top</label>
             <input class="btn-check crwSc" type="radio" name="sect" value="2" id="crwScLatest">
             <label class="btn btn-outline-primary" for="crwScLatest">Latest</label>
@@ -349,6 +349,12 @@ endwhile;
           </div>
           <input type="text" name="search" id="crwSearch" class="form-control mt-2" placeholder="Search query..."
                  value="from:<?= $u['user'] ?> " disabled>
+
+          <div class="form-check form-switch mt-3">
+            <input class="form-check-input" type="checkbox" role="switch" name="update_only" value="1"
+                   id="crwUpdateOnly" checked>
+            <label class="form-check-label" for="crwUpdateOnly">Crawl only for newest tweets</label>
+          </div>
         </form>
         <code id="crawlEvents"></code>
       </div>

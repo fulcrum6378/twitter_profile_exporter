@@ -16,21 +16,26 @@ let crawled = false
 $('#crawlForm [name=sect]').change(function () {
     if ($(this).hasClass('crwSc')) $('#crwSearch').removeAttr("disabled")
     else $('#crwSearch').attr("disabled", true)
+    if ($(this).hasClass('crwUnsorted')) $('#crwUpdateOnly').attr("disabled", true)
+    else $('#crwUpdateOnly').removeAttr("disabled")
 })
 $('#crawl').click(function () {
+    $('#crawlCancel').text('Cancel')
     $('#crawlEvents').empty()
+    $('#crawlCancel').show()
     $('#crawlHalt').hide()
     $('#crawlGo').show()
     $('#crawler').fadeIn()
 })
 $('#crawlGo').click(function () {
+    //alert($('#crawlForm').serialize()); return
+    $('#crawlCancel').hide()
     $('#crawlGo').hide()
-    $('#crawlForm').hide()
     $('#crawlHalt').show()
+    $('#crawlForm').hide()
     $(this).addClass('spinning')
 
-    crawler = new EventSource('crawler.php?t=' + target +
-        '&update_only=' + ($(this).is($('#sync')) ? '1' : '0') + '&sse=1')
+    crawler = new EventSource('crawler.php?' + $('#crawlForm').serialize() + '&sse=1')
     crawler.onmessage = (event) => {
         $('#crawlEvents').append(event.data + '</br>')
         if (event.data === 'DONE') crawlEnded($(this))
@@ -38,11 +43,7 @@ $('#crawlGo').click(function () {
     //crawler.onerror = (err) => alert(err)
     crawled = true
 })
-$('#crawlHalt').click(() => {
-    crawlEnded($(this))
-    $('#crawlHalt').hide()
-    $('#crawlOK').show()
-})
+$('#crawlHalt').click(() => crawlEnded($(this)))
 $('#crawlCancel').click(function () {
     crawlEnded($(this))
     $('#crawler').fadeOut()
@@ -54,7 +55,9 @@ function crawlEnded(button) {
     crawler.close()
     crawler = null
     button.removeClass('spinning')
-    $('#crawlHalt').addClass('disabled')
+    $('#crawlCancel').text('OK')
+    $('#crawlCancel').show()
+    $('#crawlHalt').hide()
 }
 
 

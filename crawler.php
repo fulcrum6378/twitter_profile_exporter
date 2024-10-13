@@ -4,8 +4,8 @@
 $target = $argv[1] ?? $_GET['t'];
 $search = isset($_GET['search']) ? urldecode($_GET['search']) : null;
 $sect = isset($_GET['sect']) ? intval($_GET['sect']) : 2;
-$updateOnly = ($argv[2] ?? $_GET['update_only'] ?? '1') != '0';
-$useCache = isset($_GET['use_cache']) && $_GET['use_cache'] == '1';
+$updateOnly = ($argv[2] ?? $_GET['update_only'] ?? '0') == '1';
+$useCache = ($_GET['use_cache'] ?? '0') == '1';
 /** entries not tweets; set to 0 in order to turn it off. */
 $maxEntries = isset($_GET['max_entries']) ? intval($_GET['max_entries']) : 0;
 $delay = isset($_GET['delay']) ? intval($_GET['delay']) : 10;
