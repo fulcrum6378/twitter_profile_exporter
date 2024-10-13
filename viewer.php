@@ -25,14 +25,16 @@ $tweets = $db->queryTweets($uid, $section, $page, $pageLength);
 
 # pagination
 const MAX_PAGE_LINKS = 3;
-$pageCount = ceil($db->countTweets($uid, $section) / $pageLength);
-$pMin = 0;
-$pMax = $pageCount - 1;
-if ($page > MAX_PAGE_LINKS) $pMin = $page - MAX_PAGE_LINKS;
-if (($pMax - $page) > MAX_PAGE_LINKS) $pMax = $page + MAX_PAGE_LINKS;
-if ($pMax != 0)
+$tweetCount = $db->countTweets($uid, $section);
+if ($tweetCount == 0) {
     $pRng = array(0);
-else {
+    $pageCount = 1;
+} else {
+    $pageCount = ceil($tweetCount / $pageLength);
+    $pMin = 0;
+    $pMax = $pageCount - 1;
+    if ($page > MAX_PAGE_LINKS) $pMin = $page - MAX_PAGE_LINKS;
+    if (($pMax - $page) > MAX_PAGE_LINKS) $pMax = $page + MAX_PAGE_LINKS;
     $pRng = range($pMin, $pMax);
     if ($pMin > 0) array_unshift($pRng, 0);
     if ($pMax < $pageCount - 1) $pRng[] = $pageCount - 1;
