@@ -355,7 +355,7 @@ function error(string $data): void {
 }
 
 # update the config file
-if (!$useCache) {
+if (!$useCache && $search == null && $sect <= 3) {
     require 'config.php';
     $config = readTargets();
     if (!array_key_exists($target, $config))
