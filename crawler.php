@@ -75,16 +75,24 @@ while (!$ended) {
 
     if (connection_aborted()) die();
 
-    if ($search == null)
-        $instructions = json_decode($res)->data->user->result->timeline_v2->timeline->instructions;
-    else
-        $instructions = json_decode($res)->data->search_by_raw_query->search_timeline->timeline->instructions;
+    $res = json_decode($res);
+    if (!property_exists($res, 'data'))
+        error('Invalid response from Twitter!');
+    if ($search == null) {
+        if (!property_exists($res->data->user->result->timeline_v2, 'timeline'))
+            error('Nothing found!');
+        $instructions = $res->data->user->result->timeline_v2->timeline->instructions;
+    } else
+        $instructions = $res->data->search_by_raw_query->search_timeline->timeline->instructions;
+
+    $containedNewData = false;
     foreach ($instructions as $instruction) {
         switch ($instruction->type) {
             case 'TimelinePinEntry':  // only in userTweets()
                 parseEntry($instruction->entry);
                 break;
             case 'TimelineAddEntries':
+                $containedNewData = true;
                 if (count($instruction->entries) <= 2) {
                     if ($useCache) unlink($cacheFile);
                     $ended = true;
@@ -101,11 +109,14 @@ while (!$ended) {
             break;
         }
     }
-    $iFetch++;
+    if (!$containedNewData && !($search == null && $sect == 4)) $ended = true;
+    // this will cancel crawling for tweets with many deleted in between;
+    // like if you delete a large number of your liked tweets.
 
+    $iFetch++;
     if (connection_aborted()) die();
     if ($doFetch && !$ended) {
-        say("Waiting in order not to be detected as a bot ($delay seconds)...");
+        say("Waiting for $delay seconds...");
         sleep($delay);
     }
     if (connection_aborted()) die();

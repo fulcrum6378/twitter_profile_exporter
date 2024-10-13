@@ -1,4 +1,4 @@
-// noinspection JSCheckFunctionSignatures,JSUnresolvedReference
+// noinspection JSCheckFunctionSignatures,JSUnresolvedReference,JSValidateTypes
 
 // INITIAL CONFIGURATIONS
 $(document).ready(function () {
@@ -38,6 +38,7 @@ $('#crawlGo').click(function () {
     crawler = new EventSource('crawler.php?' + $('#crawlForm').serialize() + '&sse=1')
     crawler.onmessage = (event) => {
         $('#crawlEvents').append(event.data + '</br>')
+        $('#crawler .modal-body').scrollTop($('#crawler .modal-body')[0].scrollHeight)
         if (event.data === 'DONE') crawlEnded($(this))
     }
     //crawler.onerror = (err) => alert(err)
