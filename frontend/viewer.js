@@ -1,13 +1,14 @@
 // noinspection JSCheckFunctionSignatures,JSUnresolvedReference,JSValidateTypes
 
 // INITIAL CONFIGURATIONS
-$(document).ready(function () {
+function setHeaderSizes() {
     let nmt = '-' + $('figure').height() / 2 + 'px';
     $('header').css('margin-top', nmt)
     $('#actions').css('margin-top', nmt)
-})
-$('a:not(.page-link):not(.nav-link):not(#link)')
-    .addClass('link-body-emphasis link-underline-opacity-0')
+}
+
+$(document).ready(setHeaderSizes)
+window.onresize = setHeaderSizes
 
 
 // CRAWLER

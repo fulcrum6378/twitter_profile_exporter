@@ -4,12 +4,21 @@ body {
     max-width: 50rem !important;
     font-family: TwitterChirp, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
+a:not(.page-link):not(.nav-link):not(#link) {
+    --bs-link-underline-opacity: 0;
+    color: RGBA(var(--bs-emphasis-color-rgb), var(--bs-link-opacity, 1)) !important;
+    -webkit-text-decoration-color: RGBA(var(--bs-emphasis-color-rgb), var(--bs-link-underline-opacity, 1)) !important;
+    text-decoration-color: RGBA(var(--bs-emphasis-color-rgb), var(--bs-link-underline-opacity, 1)) !important;
+}
 
 #banner {
     width: 100%;
 }
 header {
     padding: 0 1rem 1rem 1rem;
+}
+header, #actions {
+    margin-top: -87.114px; /* will change as soon as the page is loaded. */
 }
 header figure {
     width: 24%;
@@ -150,5 +159,11 @@ p.author img {
     }
     to {
         transform: rotate(360deg);
+    }
+}
+
+@media only screen and (max-width: 50rem) {
+    header, #actions {
+        margin-top: -40.5594px; /* will change as soon as the page is loaded. */
     }
 }
