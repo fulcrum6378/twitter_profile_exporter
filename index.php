@@ -1,5 +1,5 @@
 <?php
-require 'config.php';
+require 'modules/config.php';
 $targets = readTargets();
 
 if (count($targets) != 1)

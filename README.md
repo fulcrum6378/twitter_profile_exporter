@@ -32,26 +32,28 @@ Then it'll be able to reconstruct a Twitter profile in front-end.
 
 - [**manager.php**](manager.php) : the first page with a table of target profiles you saw during the setup.
   You'll be able to add multiple profiles and delete them.
-  Its data is stored in *targets.json* via the submodule *config.php*.
+  Its data is stored in *targets.json* via the module *config.php*.
 
 - [**viewer.php**](viewer.php) : reads databases and shows their contents,
   also has a UI for using *crawler.php*.
 
-- [**crawler.php**](crawler.php) (no UI) : crawls Twitter using the submodule *API.php*,
-  parses responses, stores data inside databases via the submodule *Database.php* and downloads related media.
+## Workers
 
-- [**printer.php**](printer.php) (no UI) : creates a TXT file out of main tweets of a profile,
+- [**crawler.php**](crawler.php) : crawls Twitter using the module *API.php*,
+  parses responses, stores data inside databases via the module *Database.php* and downloads related media.
+
+- [**printer.php**](printer.php) : creates a TXT file out of main tweets of a profile,
   usually in order to be analysed by an AI like ChatGPT.
 
-- [**cleaner.php**](cleaner.php) (no UI) : removes old profile pictures and banners.
+- [**cleaner.php**](cleaner.php) : removes old profile pictures and banners.
 
-## Submodules
+## Modules
 
-- [**config.php**](config.php) : controls *targets.json* containing a list of target profiles.
+- [**config.php**](modules/config.php) : controls *targets.json* containing a list of target profiles.
 
-- [**API.php**](API.php) : connects to the Twitter API and gets JSON responses (but doesn't parse them).
+- [**API.php**](modules/API.php) : connects to the Twitter API and gets JSON responses (but doesn't parse them).
 
-- [**Database.php**](Database.php) : controls SQLite databases containing all data from Twitter profiles.
+- [**Database.php**](modules/Database.php) : controls SQLite databases containing all data from Twitter profiles.
 
 ## License
 

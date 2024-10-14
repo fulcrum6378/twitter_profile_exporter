@@ -3,7 +3,7 @@
 # target database
 if (isset($_GET['t'])) $target = $_GET['t'];
 if (!isset($target)) die("No target detected!");
-require 'Database.php';
+require 'modules/Database.php';
 $db = new Database($target, true);
 
 # user

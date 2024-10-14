@@ -15,10 +15,10 @@ $sse = ($_GET['sse'] ?? '0') == '1';
 if (isset($argv)) chdir(dirname($_SERVER['PHP_SELF']));
 set_time_limit(0);
 
-# submodules
-require 'Database.php';
+# modules
+require 'modules/Database.php';
 $db = new Database($target, true);
-require 'API.php';
+require 'modules/API.php';
 $api = new API();
 
 # constants
@@ -356,7 +356,7 @@ function error(string $data): void {
 
 # update the config file
 if (!$useCache && $search == null && $sect <= 3) {
-    require 'config.php';
+    require 'modules/config.php';
     $config = readTargets();
     if (!array_key_exists($target, $config))
         $config[$target] = array('name' => '', 'last' => $lastSync);

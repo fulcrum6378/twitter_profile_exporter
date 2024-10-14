@@ -2,7 +2,7 @@
 
 # targets
 if (!isset($targets)) {
-    require 'config.php';
+    require 'modules/config.php';
     $targets = readTargets();
 }
 
