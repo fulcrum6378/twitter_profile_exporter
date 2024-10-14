@@ -5,6 +5,8 @@ function setHeaderSizes() {
     let nmt = '-' + $('figure').height() / 2 + 'px';
     $('header').css('margin-top', nmt)
     $('#actions').css('margin-top', nmt)
+
+    $('div#header').css('min-height', $('body').width() / 3 + 'px')
 }
 
 $(document).ready(setHeaderSizes)

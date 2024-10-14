@@ -1,5 +1,10 @@
 # Twitter Profile Exporter
 
+A web-based application which crawls profiles on Twitter for all of their tweets, all tweets related to them,
+including their attachments, statistics and data of their authors.
+Main data is stored in an SQLite database and all media are downloaded.
+Then it'll be able to reconstruct a Twitter profile in front-end.
+
 ## Setup
 
 1. Clone this project in a PHP server.
@@ -47,3 +52,21 @@
 - [**API.php**](API.php) : connects to the Twitter API and gets JSON responses (but doesn't parse them).
 
 - [**Database.php**](Database.php) : controls SQLite databases containing all data from Twitter profiles.
+
+## License
+
+```
+            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+                    Version 2, December 2004
+
+ Copyright (C) 2024 Mahdi Parastesh <fulcrum1378@gmail.com>
+
+ Everyone is permitted to copy and distribute verbatim or modified
+ copies of this license document, and changing it is allowed as long
+ as the name is changed.
+
+            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
+
+  0. You just DO WHAT THE FUCK YOU WANT TO.
+```

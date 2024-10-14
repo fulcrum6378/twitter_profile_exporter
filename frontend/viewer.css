@@ -14,11 +14,15 @@ a:not(.page-link):not(.nav-link):not(#link) {
 #banner {
     width: 100%;
 }
+div#banner { /* no banner */
+    background-color: rgb(207, 217, 222);
+    min-height: 16.5rem; /* changed on load */
+}
 header {
     padding: 0 1rem 1rem 1rem;
 }
 header, #actions {
-    margin-top: -87.114px; /* will change as soon as the page is loaded. */
+    margin-top: -87.114px; /* changed on load */
 }
 header figure {
     width: 24%;
@@ -163,7 +167,10 @@ p.author img {
 }
 
 @media only screen and (max-width: 50rem) {
+    div#banner { /* no banner */
+        min-height: 8.5rem; /* changed on load */
+    }
     header, #actions {
-        margin-top: -40.5594px; /* will change as soon as the page is loaded. */
+        margin-top: -40.5594px; /* changed on load */
     }
 }

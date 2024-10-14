@@ -61,9 +61,13 @@ date_default_timezone_set('Asia/Tehran');
   <script src="frontend/bootstrap.bundle.min.js"></script>
   <script src="frontend/query.js"></script>
 </head>
+
 <body class="container border-start border-end">
-<img id="banner" src="media/<?= "$target/$uid/" .
-str_replace('/', '_', $u['banner']) . '.jfif' ?>">
+<?php if ($u['banner'] != null) : ?>
+<img id="banner" src="media/<?= "$target/$uid/" . str_replace('/', '_', $u['banner']) . '.jfif' ?>">
+<?php else : ?>
+<div id="banner"></div>
+<?php endif ?>
 <header>
   <figure>
     <img id="photo" src="media/<?= "$target/$uid/" . profilePhoto($u) ?>">
