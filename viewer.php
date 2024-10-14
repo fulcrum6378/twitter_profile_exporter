@@ -40,6 +40,10 @@ if ($tweetCount == 0) {
     if ($pMax < $pageCount - 1) $pRng[] = $pageCount - 1;
 }
 
+# front-end assets
+if (!is_file('frontend/jquery.min.js') || filesize('frontend/jquery.min.js') == 0)
+    require 'frontend/install.php';
+
 # miscellaneous
 $rtl = ['fa', 'ar', 'he'];
 date_default_timezone_set('Asia/Tehran');
@@ -52,13 +56,14 @@ date_default_timezone_set('Asia/Tehran');
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#222222">
   <meta charset="UTF-8">
   <title><?= "{$u['name']} (@{$u['user']})"; ?></title>
-  <link rel="icon" href="frontend/icons/twitter.svg" sizes="any" type="image/svg+xml">
 
+  <link rel="icon" href="frontend/icons/twitter.svg" sizes="any" type="image/svg+xml">
   <link href="frontend/bootstrap.min.css" rel="stylesheet">
   <link href="frontend/viewer.css" rel="stylesheet">
 
-  <script src="frontend/jquery-3.7.1.min.js"></script>
+  <script src="frontend/jquery.min.js"></script>
   <script src="frontend/bootstrap.bundle.min.js"></script>
+  <script src="frontend/bootstrap-auto-dark-mode.js"></script>
   <script src="frontend/query.js"></script>
 </head>
 

@@ -17,11 +17,13 @@ date_default_timezone_set("Asia/Tehran");
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#222222">
   <meta charset="UTF-8">
   <title>Twitter Profile Exporter</title>
-  <link rel="icon" href="frontend/icons/twitter.svg" sizes="any" type="image/svg+xml">
 
-  <script src="frontend/jquery-3.7.1.min.js"></script>
+  <link rel="icon" href="frontend/icons/twitter.svg" sizes="any" type="image/svg+xml">
   <link href="frontend/bootstrap.min.css" rel="stylesheet">
+
+  <script src="frontend/jquery.min.js"></script>
   <script src="frontend/bootstrap.bundle.min.js"></script>
+  <script src="frontend/bootstrap-auto-dark-mode.js"></script>
 </head>
 
 <body class="container border-start border-end px-0">

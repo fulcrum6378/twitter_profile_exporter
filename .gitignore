@@ -5,7 +5,8 @@ databases/
 media/
 
 # front-end assets
-frontend/bootstrap*
+frontend/bootstrap.bundle.min.js*
+frontend/bootstrap.min.css*
 frontend/jquery*
 
 # configurations
