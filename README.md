@@ -22,11 +22,9 @@ Then it'll be able to reconstruct a Twitter profile in front-end.
     6. Now here's your headers file. Put it in the main directory of the project, beside the PHP files.
 
 3. Open the index page in a browser like it's a typical website. You'll see an empty table.
-4. You'll have to find the unique Twitter ID number of the profile you want to export its contents.
-   It'd be a long number like `2286930721`
-5. Enter the Twitter ID plus a visible name (no matter what) in the table and then click on **Add**...
+4. Enter the username of the profile you want to export its contents, then click on **Add**...
    It'll immediately start crawling that profile and download a bunch of latest tweets. You can download more later.
-6. Now return to the index page and see all contents of your target profile.
+5. Now return to the index page and see all contents of your target profile.
 
 ## Pages
 

@@ -30,18 +30,15 @@ date_default_timezone_set("Asia/Tehran");
 <table class="table">
   <thead>
   <tr>
-    <th>ID</th>
-    <th>Name</th>
+    <th>Username</th>
     <th>Last Sync</th>
     <th>Actions</th>
   </tr>
   </thead>
   <tbody>
 <?php foreach ($targets as $id => $u) : ?>
-    <tr>
-      <td><?= $id ?></td>
-      <td>
-        <input type="text" class="name" value="<?= $u['name'] ?>"></td>
+    <tr data-id="<?= $id ?>">
+      <td><?= $u['user'] ?></td>
       <td><?= ($u['last'] != 0) ? date('Y/m/d H:i:s', $u['last']) : 'never' ?></td>
       <td>
         <a href="viewer.php?t=<?= $id ?>" target="_blank">View</a>
@@ -51,8 +48,7 @@ date_default_timezone_set("Asia/Tehran");
     </tr>
 <?php endforeach; ?>
   <tr>
-    <td><input type="text" id="newId" placeholder="Twitter ID..."></td>
-    <td><input type="text" id="newName" placeholder="Person Name..."></td>
+    <td><input type="text" id="newUser" placeholder="New User..."></td>
     <td></td>
     <td>
       <a href="javascript:void(0)" id="put">Add</a>

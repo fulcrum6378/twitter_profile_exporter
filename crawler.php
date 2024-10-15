@@ -57,7 +57,7 @@ while (!$ended) {
             $res = $api->userTweets($target, $sect, $cursor);
         else
             $res = $api->searchTweets($search, $sect, $cursor);
-        if ($res == '') error("Couldn't fetch tweets!");
+        if ($res == '') error("Couldn't connect to Twitter!");
         else say("Fetched page $iFetch");
     }
 

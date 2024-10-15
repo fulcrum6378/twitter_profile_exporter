@@ -5,45 +5,32 @@ function isBlank(value) {
     if (typeof value === 'string') return value.trim().length === 0;
 }
 
-function changeConfig(query, method, doAlert = true, doReload = true) {
+function changeConfig(query, method, doReload = false) {
     $.ajax({
-        url: 'config.php?' + query,
+        url: 'modules/config.php?' + query,
         method: method,
         cache: false,
         dataType: 'text',
-        timeout: 5000,
+        timeout: 10000,
         success: (result/*, textStatus, jqXHR*/) => {
-            if (doAlert) alert(result)
-            if (doReload) location.reload()
+            alert(result)
+            if (result === 'Done' || doReload) location.reload()
         },
         error: (jqXHR, textStatus, errorThrown) => {
-            if (doAlert) alert(errorThrown)
+            alert(errorThrown)
             if (doReload) location.reload()
         }
     })
 }
 
-// INSERT
+// PUT
 $('#put').click(function () {
-    let newId = $('#newId').val(), newName = $('#newName').val()
-    if (isBlank(newId) || isNaN(newId) || isNaN(parseFloat(newId))) {
-        alert('Twitter ID is not valid!')
+    let newUser = $('#newUser').val()
+    if (isBlank(newUser)) {
+        alert('Username is not valid!')
         return
     }
-    if (isBlank(newName)) {
-        alert('Person Name is not valid!')
-        return
-    }
-    changeConfig('id=' + newId + '&name=' + newName, 'PUT')
-})
-
-// UPDATE
-$('.name').on('blur', function () {
-    changeConfig(
-        'id=' + $(this).parent().parent().find(">:first-child").text() +
-        '&name=' + $(this).val(),
-        'PUT',
-        false, false)
+    changeConfig('u=' + newUser, 'PUT')
 })
 
 // DELETE
@@ -51,6 +38,6 @@ $('.delete').click(function () {
     if (!confirm("Are you sure you want to delete this account from this table? " +
         "(the database and media will NOT be deleted.)")) return
     changeConfig(
-        't=' + $(this).parent().parent().find(">:first-child").text(),
-        'DELETE')
+        't=' + $(this).parent().parent().attr('data-id'),
+        'DELETE', true)
 })

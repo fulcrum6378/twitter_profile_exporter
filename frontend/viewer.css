@@ -47,12 +47,18 @@ header .icon {
     float: right;
     padding-top: 0.5rem;
 }
-#actions img {
+#actions img, #home img {
     width: 48px;
     height: 48px;
     padding: 11px;
     margin: 0 0.3rem;
     border-radius: 50%;
+}
+#home {
+    position: fixed;
+    left: 0.75rem;
+    top: 0.5rem;
+    opacity: 0.7;
 }
 .spinning {
     animation-name: spinner;
@@ -176,7 +182,7 @@ p.author img {
 }
 
 @media (prefers-color-scheme: dark) {
-    #actions img, .icon, .tweetStat img {
+    #actions img, #home img, .icon, .tweetStat img {
         filter: invert(100%);
     }
 }
