@@ -42,6 +42,7 @@ $iFetch = 1;
 $parsedTweetsCount = 0;
 $parsedUsers = array();
 $iTarget = intval($target);
+$targetUsername = null;
 $lastSync = 0;
 while (!$ended) {
     if ($useCache) {
@@ -144,13 +145,15 @@ function parseEntry(stdClass $entry): bool {
 
 function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
     if (!property_exists($tweet, 'rest_id')) return true; // TweetTombstone
-    global $parsedUsers, $db, $iTarget;
+    global $parsedUsers, $db, $iTarget, $targetUsername;
     $tweetId = intval($tweet->rest_id);
 
     # User
     $userId = intval($tweet->core->user_results->result->rest_id);
     if (!in_array($userId, $parsedUsers)) {
         $ul = $tweet->core->user_results->result->legacy;
+        if ($userId == $iTarget && $targetUsername == null)
+            $targetUsername = $ul->screen_name;
         $dbUser = $db->queryUser($userId, 'photo,banner');
         if (!$dbUser) say("Processing user @$ul->screen_name (id:$userId)");
 
@@ -354,15 +357,17 @@ function error(string $data): void {
     die();
 }
 
-# update the config file
+# update the targets file
 if (!$useCache && $search == null && $sect <= 3) {
     require 'modules/config.php';
-    $config = readTargets();
-    if (!array_key_exists($target, $config))
-        $config[$target] = array('name' => '', 'last' => $lastSync);
-    else
-        if ($lastSync != 0) $config[$target]['last'] = $lastSync;
-    writeTargets($config);
+    $targets = readTargets();
+    if (!array_key_exists($target, $targets))
+        $targets[$target] = array('user' => $targetUsername, 'last' => $lastSync);
+    else {
+        if ($targetUsername != null) $targets[$target]['user'] = $targetUsername;
+        if ($lastSync != 0) $targets[$target]['last'] = $lastSync;
+    }
+    writeTargets($targets);
 }
 
 say('DONE');
