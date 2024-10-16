@@ -38,21 +38,15 @@ date_default_timezone_set("Asia/Tehran");
   <tbody>
 <?php foreach ($targets as $id => $u) : ?>
     <tr data-id="<?= $id ?>">
-      <td><?= $u['user'] ?></td>
+      <td><a href="viewer.php?t=<?= $id ?>" target="_blank"><?= $u['user'] ?></a></td>
       <td><?= ($u['last'] != 0) ? date('Y/m/d H:i:s', $u['last']) : 'never' ?></td>
-      <td>
-        <a href="viewer.php?t=<?= $id ?>" target="_blank">View</a>
-        &nbsp;
-        <a href="javascript:void(0)" class="delete">Delete</a>
-      </td>
+      <td><a href="javascript:void(0)" class="delete">Delete</a></td>
     </tr>
 <?php endforeach; ?>
   <tr>
     <td><input type="text" id="newUser" placeholder="New User..."></td>
     <td></td>
-    <td>
-      <a href="javascript:void(0)" id="put">Add</a>
-    </td>
+    <td><a href="javascript:void(0)" id="put">Add</a></td>
   </tr>
   </tbody>
 </table>
