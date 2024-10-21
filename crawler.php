@@ -78,7 +78,7 @@ while (!$ended) {
 
     $res = json_decode($res);
     if (!property_exists($res, 'data'))
-        error('Invalid response from Twitter!');
+        error('Invalid response from Twitter: ' . json_encode($res));
     if ($search == null) {
         if (!property_exists($res->data->user->result->timeline_v2, 'timeline'))
             error('Nothing found!');
@@ -162,22 +162,20 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
             $photoUrl = str_replace('_normal', '', $ul->profile_image_url_https);
             $photo = substr($photoUrl, strlen(TWIMG_IMAGES));
             if (download($photoUrl, str_replace('/', '_', $photo), $userId) == 0
-                && $dbUser && $dbUser['photo'] != null && $iTarget != $userId) {
-                unlink("media/$iTarget/$userId/" .
-                    str_replace('/', '_', $dbUser['photo']));
-                say('Old profile photo was removed.');
-            }
+                && $dbUser && $dbUser['photo'] != null && $iTarget != $userId)
+                deleteOldFile("media/$iTarget/$userId/" .
+                    str_replace('/', '_', $dbUser['photo']),
+                    'Old profile photo was removed.');
         } else
             $photo = null;
         if (property_exists($ul, 'profile_banner_url')) {
             $banner = substr($ul->profile_banner_url, strlen(TWIMG_BANNERS));
             if (download($ul->profile_banner_url,
                     str_replace('/', '_', $banner) . '.jfif', $userId
-                ) == 0 && $dbUser && $dbUser['banner'] != null && $iTarget != $userId) {
-                unlink("media/$iTarget/$userId/" .
-                    str_replace('/', '_', $dbUser['banner']) . '.jfif');
-                say('Old profile banner was removed.');
-            }
+                ) == 0 && $dbUser && $dbUser['banner'] != null && $iTarget != $userId)
+                deleteOldFile("media/$iTarget/$userId/" .
+                    str_replace('/', '_', $dbUser['banner']) . '.jfif',
+                    'Old profile banner was removed.');
         } else
             $banner = null;
 
@@ -340,6 +338,10 @@ function download(string $url, string $fileName, int $user): int {
     return 0;
 }
 
+function deleteOldFile(string $path, string $msg): void {
+    if (is_file($path) && unlink($path)) say($msg);
+}
+
 function say(string $data): void {
     global $sse;
     if ($sse) echo "event: message\ndata: $data\n\n";
@@ -354,7 +356,7 @@ function error(string $data): void {
     echo "event: error\ndata: $data\n\n";
     if (ob_get_contents()) ob_end_flush();
     flush();
-    die();
+    die;
 }
 
 # update the targets file

@@ -44,7 +44,11 @@ $('#crawlGo').click(function () {
         $('#crawler .modal-body').scrollTop($('#crawler .modal-body')[0].scrollHeight)
         if (event.data === 'DONE') crawlEnded($(this))
     }
-    //crawler.onerror = (err) => alert(err)
+    crawler.onerror = (event) => {
+        $('#crawlEvents').append(event.data + '</br>')
+        $('#crawler .modal-body').scrollTop($('#crawler .modal-body')[0].scrollHeight)
+        crawlEnded($(this))
+    }
     crawled = true
 })
 $('#crawlHalt').click(() => crawlEnded($(this)))
