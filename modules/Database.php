@@ -99,7 +99,7 @@ EOF
         int     $media_count,
         ?int    $pinned_t
     ): void {
-        $q = $this->db->prepare('INSERT INTO User ' .
+        $q = $this->db->prepare("INSERT INTO $this->User " .
             '(id, user, name, description, created_at, location, photo, banner, link, following, followers, ' .
             'tweet_count, media_count, pinned_t) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         $q->bindValue(1, $id);
@@ -134,7 +134,7 @@ EOF
         int     $media_count,
         ?int    $pinned_t
     ): void {
-        $q = $this->db->prepare('UPDATE User SET ' .
+        $q = $this->db->prepare("UPDATE $this->User SET " .
             'user=?, name=?, description=?, location=?, photo=?, banner=?, link=?, following=?, followers=?, ' .
             'tweet_count=?, media_count=?, pinned_t=? WHERE id = ?');
         $q->bindValue(1, $user);
@@ -154,11 +154,11 @@ EOF
     }
 
     function queryUsers(): false|SQLite3Result {
-        return $this->db->query("SELECT * FROM User");
+        return $this->db->query("SELECT * FROM $this->User");
     }
 
     function queryUser(string $id, string $columns = '*'): array|false {
-        return $this->db->query("SELECT $columns FROM User WHERE id = $id LIMIT 1")->fetchArray();
+        return $this->db->query("SELECT $columns FROM $this->User WHERE id = $id LIMIT 1")->fetchArray();
     }
 
     function insertTweet(
@@ -172,7 +172,7 @@ EOF
         ?int    $retweet_of = null,
         bool    $is_quote = false
     ): void {
-        $q = $this->db->prepare('INSERT INTO Tweet ' .
+        $q = $this->db->prepare("INSERT INTO $this->Tweet " .
             '(id, user, time, text, lang, media, reply, retweet, is_quote) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)');
         $q->bindValue(1, $id);
         $q->bindValue(2, $user);
@@ -186,11 +186,15 @@ EOF
         $q->execute();
     }
 
-    function tweetSectionClause(int $section): string {
+    function tweetSectionClause(
+        string $user,
+        int $section
+    ): string {
         return match ($section) {
-            2 => "",
-            3 => "AND media IS NOT NULL",
-            default => "AND reply IS NULL ",
+            2 => "user = $user",
+            3 => "reply in (SELECT id FROM $this->Tweet WHERE user = $user)",
+            4 => "user = $user AND media IS NOT NULL",
+            default => "user = $user AND reply IS NULL",
         };
     }
 
@@ -198,8 +202,8 @@ EOF
         string $user,
         int    $section = 2,
     ): int {
-        $clause = $this->tweetSectionClause($section);
-        return $this->db->query("SELECT COUNT(1) FROM Tweet WHERE user = $user $clause")->fetchArray()[0];
+        $clause = $this->tweetSectionClause($user, $section);
+        return $this->db->query("SELECT COUNT(1) FROM $this->Tweet WHERE $clause")->fetchArray()[0];
     }
 
     function queryTweets(
@@ -208,19 +212,19 @@ EOF
         int    $page = 0,
         int    $length = Database::PAGE_LENGTH
     ): false|SQLite3Result {
-        $clause = $this->tweetSectionClause($section);
+        $clause = $this->tweetSectionClause($user, $section);
         $offset = $page * $length;
         if ($length > 0)
             $limit = " LIMIT $length OFFSET $offset";
         else
             $limit = '';
         return $this->db->query(
-            "SELECT * FROM Tweet WHERE user = $user $clause ORDER BY time DESC$limit"
+            "SELECT * FROM $this->Tweet WHERE $clause ORDER BY time DESC$limit"
         );
     }
 
     function queryTweet(int $id): array|false {
-        return $this->db->query("SELECT * FROM Tweet WHERE id = $id LIMIT 1")->fetchArray();
+        return $this->db->query("SELECT * FROM $this->Tweet WHERE id = $id LIMIT 1")->fetchArray();
     }
 
     function insertTweetStat(
@@ -232,7 +236,7 @@ EOF
         ?int $retweet,
         ?int $view,
     ): void {
-        $q = $this->db->prepare('INSERT INTO TweetStat ' .
+        $q = $this->db->prepare("INSERT INTO $this->TweetStat " .
             '(id, bookmark, favorite, quote, reply, retweet, view) VALUES(?, ?, ?, ?, ?, ?, ?)');
         $q->bindValue(1, $id);
         $q->bindValue(2, $bookmark);
@@ -253,7 +257,7 @@ EOF
         ?int $retweet,
         ?int $view,
     ): void {
-        $q = $this->db->prepare('UPDATE TweetStat SET ' .
+        $q = $this->db->prepare("UPDATE $this->TweetStat SET " .
             'bookmark=?, favorite=?, quote=?, reply=?, retweet=?, view=? WHERE id = ?');
         $q->bindValue(1, $bookmark);
         $q->bindValue(2, $favorite);
@@ -266,7 +270,7 @@ EOF
     }
 
     function queryTweetStat(int $id): array|false {
-        return $this->db->query("SELECT * FROM TweetStat WHERE id = $id LIMIT 1")->fetchArray();
+        return $this->db->query("SELECT * FROM $this->TweetStat WHERE id = $id LIMIT 1")->fetchArray();
     }
 
     function insertMedia(
@@ -275,7 +279,7 @@ EOF
         string $url,
         int    $tweet,
     ): void {
-        $q = $this->db->prepare('INSERT INTO Media (id, ext, url, tweet) VALUES(?, ?, ?, ?)');
+        $q = $this->db->prepare("INSERT INTO $this->Media (id, ext, url, tweet) VALUES(?, ?, ?, ?)");
         $q->bindValue(1, $id);
         $q->bindValue(2, $ext);
         $q->bindValue(3, $url);
@@ -284,7 +288,7 @@ EOF
     }
 
     function queryMedium(int $id): array|false {
-        return $this->db->query("SELECT * FROM Media WHERE id = $id LIMIT 1")->fetchArray();
+        return $this->db->query("SELECT * FROM $this->Media WHERE id = $id LIMIT 1")->fetchArray();
     }
 
     function __destruct() {

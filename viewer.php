@@ -135,7 +135,10 @@ usually to be analysed by AI.">
     <a class="nav-link<?= $section == 2 ? ' fw-bold' : '' ?>" href="javascript:void(0)" id="replies">Replies</a>
   </div>
   <div class="col nav-item">
-    <a class="nav-link<?= $section == 3 ? ' fw-bold' : '' ?>" href="javascript:void(0)" id="media">Media</a>
+    <a class="nav-link<?= $section == 3 ? ' fw-bold' : '' ?>" href="javascript:void(0)" id="mentions">Mentions</a>
+  </div>
+  <div class="col nav-item">
+    <a class="nav-link<?= $section == 4 ? ' fw-bold' : '' ?>" href="javascript:void(0)" id="media">Media</a>
   </div>
 </nav>
 
@@ -144,7 +147,7 @@ usually to be analysed by AI.">
 while ($ent = $tweets->fetchArray()) :
     $thread = array($ent);
     $bottomId = $ent['id'];
-    if ($section == 2 || $section == 3) {
+    if ($section != 1) {
         $rep = $ent['reply'];
         while ($rep != null) {
             $reply = $db->queryTweet($rep);

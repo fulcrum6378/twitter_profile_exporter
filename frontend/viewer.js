@@ -72,7 +72,7 @@ function crawlEnded(button) {
 // PAGINATION
 const PARAM_SECTION = 'sect'
 const PARAM_PAGE = 'p'
-const tabs = ['tweets', 'replies', 'media']
+const tabs = ['tweets', 'replies', 'mentions', 'media']
 tabs.forEach(function (value, index) {
     $('#' + value).click(function () {
         let params = parseParams()
