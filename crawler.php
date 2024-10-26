@@ -77,7 +77,7 @@ while (!$ended) {
     if (connection_aborted()) die();
 
     $res = json_decode($res);
-    if (!property_exists($res, 'data'))
+    if ($res == null || !property_exists($res, 'data'))
         error('Invalid response from Twitter: ' . json_encode($res));
     if ($search == null) {
         if (!property_exists($res->data->user->result->timeline_v2, 'timeline'))
@@ -127,6 +127,7 @@ function parseEntry(stdClass $entry): bool {
     global $cursor, $parsedTweetsCount;
 
     if (str_starts_with($entry->entryId, 'who-to-follow') ||
+        str_starts_with($entry->entryId, 'user') ||
         str_starts_with($entry->entryId, 'cursor-top')) return true;
     if (str_starts_with($entry->entryId, 'cursor-bottom')) {
         $cursor = $entry->content->value;
