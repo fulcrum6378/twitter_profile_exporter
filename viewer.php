@@ -376,6 +376,11 @@ endwhile;
                    id="crwUpdateOnly" checked>
             <label class="form-check-label" for="crwUpdateOnly">Crawl only for newest tweets</label>
           </div>
+
+          <div class="d-flex mt-1">
+            <input type="number" name="delay" id="crwDelay" class="form-control" value="5">
+            <label class="form-label mt-2 ms-2" for="crwDelay">seconds waiting between each request</label>
+          </div>
         </form>
         <code id="crawlEvents"></code>
       </div>

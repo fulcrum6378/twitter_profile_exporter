@@ -162,6 +162,9 @@ p.author img {
 .modal {
     background: rgba(0, 20, 80, 0.4);
 }
+.modal input[type=number] {
+    max-width: 4.5rem;
+}
 
 @keyframes spinner {
     from {
