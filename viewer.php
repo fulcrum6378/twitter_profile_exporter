@@ -10,7 +10,9 @@ $db = new Database($target, true);
 $users = array();
 $uid = $_GET['u'] ?? $target;
 $u = u($uid);
-if (!$u) {
+if ($u == -1)
+    die('Database is locked!');
+if ($u == -2) {
     if ($uid == $target) {
         header("Location: crawler.php?t=$target&sect=1&max_entries=" . Database::PAGE_LENGTH . '&delay=0');
         // crawler won't be able to redirect back neither via PHP nor HTML\JS!
@@ -393,13 +395,14 @@ endwhile;
 <script src="frontend/viewer.js"></script>
 </body>
 </html><?php
-function u(string|int $id): false|array {
+function u(string|int $id): array|int {
     global $db, $users;
     if (is_int($id)) $id = strval($id);
     if (array_key_exists($id, $users))
         return $users[$id];
     else {
         $nu = $db->queryUser($id);
+        if (gettype($nu) != 'array') return $nu;
         $users[$id] = $nu;
         return $nu;
     }

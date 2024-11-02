@@ -157,8 +157,12 @@ EOF
         return $this->db->query("SELECT * FROM $this->User");
     }
 
-    function queryUser(string $id, string $columns = '*'): array|false {
-        return $this->db->query("SELECT $columns FROM $this->User WHERE id = $id LIMIT 1")->fetchArray();
+    function queryUser(string $id, string $columns = '*'): array|int {
+        $res = $this->db->query("SELECT $columns FROM $this->User WHERE id = $id LIMIT 1");
+        if (!$res) return -1;
+        $arr = $res->fetchArray();
+        if (!$arr) return -2;
+        return $arr;
     }
 
     function insertTweet(
@@ -188,7 +192,7 @@ EOF
 
     function tweetSectionClause(
         string $user,
-        int $section
+        int    $section
     ): string {
         return match ($section) {
             2 => "user = $user",

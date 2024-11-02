@@ -13,15 +13,51 @@ $(document).ready(setHeaderSizes)
 window.onresize = setHeaderSizes
 
 
-// CRAWLER
+// CRAWLER SETTINGS
+const CRAWL_SECT = 'crawl_sect'
+let crawlSect = localStorage.getItem(CRAWL_SECT)
+if (crawlSect !== null) {
+    let element = $('#' + crawlSect)
+    element.prop('checked', true)
+    changeSect(element)
+}
+$('#crawlForm [name=sect]').change(function () {
+    localStorage.setItem(CRAWL_SECT, $(this).attr('id'))
+    changeSect($(this))
+})
+
+function changeSect(element) {
+    if (element.hasClass('crwSc')) $('#crwSearch').removeAttr("disabled")
+    else $('#crwSearch').attr("disabled", true)
+    if (element.hasClass('crwUnsorted')) $('#crwUpdateOnly').attr("disabled", true)
+    else $('#crwUpdateOnly').removeAttr("disabled")
+}
+
+const CRAWL_SEARCH = 'crawl_search'
+let crawlSearch = localStorage.getItem(CRAWL_SEARCH)
+if (crawlSearch !== null) $('#crwSearch').val(crawlSearch)
+$('#crwSearch').on('input', function () {
+    localStorage.setItem(CRAWL_SEARCH, $(this).val())
+})
+
+const CRAWL_UPDATE_ONLY = 'crawl_update_only'
+let crawlUpdateOnly = localStorage.getItem(CRAWL_UPDATE_ONLY)
+if (crawlUpdateOnly !== null) $('#crwUpdateOnly').prop('checked', crawlUpdateOnly !== 'false')
+$('#crwUpdateOnly').change(function () {
+    localStorage.setItem(CRAWL_UPDATE_ONLY, $(this).is(':checked'))
+})
+
+const CRAWL_DELAY = 'crawl_delay'
+let crawlDelay = localStorage.getItem(CRAWL_DELAY)
+if (crawlDelay !== null) $('#crwDelay').val(crawlDelay)
+$('#crwDelay').on('input', function () {
+    localStorage.setItem(CRAWL_DELAY, $(this).val())
+})
+
+
+// CRAWLING
 let crawler = null
 let crawled = false
-$('#crawlForm [name=sect]').change(function () {
-    if ($(this).hasClass('crwSc')) $('#crwSearch').removeAttr("disabled")
-    else $('#crwSearch').attr("disabled", true)
-    if ($(this).hasClass('crwUnsorted')) $('#crwUpdateOnly').attr("disabled", true)
-    else $('#crwUpdateOnly').removeAttr("disabled")
-})
 $('#crawl').click(function () {
     $('#crawlCancel').text('Cancel')
     $('#crawlEvents').empty()
