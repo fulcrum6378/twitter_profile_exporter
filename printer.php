@@ -4,7 +4,7 @@ header('Content-Type: text/plain');
 # target database
 $target = $argv[1] ?? $_GET['t'] ?? null;
 if ($target == null) die("No target detected!");
-require 'modules/Database.php';
+require __DIR__ . '/modules/Database.php';
 $db = new Database($target);
 
 # read & print tweets

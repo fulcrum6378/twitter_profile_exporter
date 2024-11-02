@@ -4,14 +4,14 @@ header('Content-Type: text/plain');
 # target database
 $target = $argv[1] ?? $_GET['t'] ?? null;
 if ($target == null) die("No target detected!");
-require 'modules/Database.php';
+require __DIR__ . '/modules/Database.php';
 $db = new Database($target);
 
 # global settings
 if (isset($argv)) chdir(dirname($_SERVER['PHP_SELF']));
 
 $deletable = 0;
-$usersDir = "media/$target";
+$usersDir = __DIR__ . "/media/$target";
 $users = $db->queryUsers();
 while ($u = $users->fetchArray()) {
     if ($u['id'] == $target) continue;

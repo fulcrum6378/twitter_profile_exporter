@@ -12,7 +12,7 @@ class Database {
 
     /** Requires the `sqlite3` extension to be enabled. */
     function __construct(string $userId, bool $createIfNotExists = false) {
-        $dbDir = 'databases';
+        $dbDir = __DIR__ . '/../databases';
         if (!file_exists($dbDir)) mkdir($dbDir);
         $preExisting = file_exists("$dbDir/$userId.db");
         if (!$preExisting && !$createIfNotExists) return;

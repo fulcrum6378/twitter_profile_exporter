@@ -1,6 +1,6 @@
 <?php
 
-const TARGETS_PATH = 'targets.json';
+const TARGETS_PATH = __DIR__ . '/../targets.json';
 
 function readTargets(): array {
     return json_decode(
@@ -20,13 +20,12 @@ function writeTargets(array $data): void {
 
 if (basename(__FILE__) == basename($_SERVER['SCRIPT_FILENAME'])) {
     header('Content-Type: text/plain');
-    chdir('../');
 
     $targets = readTargets();
     switch ($_SERVER['REQUEST_METHOD']) {
         case 'PUT':
             if (!isset($_GET['u'])) die('Username not specified!');
-            require 'API.php';
+            require __DIR__ . '/API.php';
             $api = new API();
             $res = $api->userByScreenName($_GET['u']);
             if ($res == '') die("Couldn't connect to Twitter!");

@@ -12,7 +12,7 @@ class API {
     /** Requires the `curl` extension to be enabled. */
     function __construct() {
         # parse the intercepted headers
-        foreach (json_decode(file_get_contents('headers.json')) as $key => $value)
+        foreach (json_decode(file_get_contents(__DIR__ . '/../headers.json')) as $key => $value)
             $this->headers[] = $key . ': ' . $value;
 
         # prepare API parameters
@@ -75,7 +75,7 @@ class API {
             CURLOPT_TIMEOUT => 30,
             CURLOPT_RETURNTRANSFER => true,
         ));
-        if (PHP_OS == 'WINNT') {
+        if (gethostname() == 'CHIMAERA') {
             curl_setopt($curl, CURLOPT_PROXY, '127.0.0.1:8580');
             curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
             //curl_setopt($curl, CURLOPT_VERBOSE, 1);

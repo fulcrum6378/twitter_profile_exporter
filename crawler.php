@@ -12,13 +12,12 @@ $delay = isset($_GET['delay']) ? intval($_GET['delay']) : 10;
 $sse = ($_GET['sse'] ?? '0') == '1';
 
 # global settings
-if (isset($argv)) chdir(dirname($_SERVER['PHP_SELF']));
 set_time_limit(0);
 
 # modules
-require 'modules/Database.php';
+require __DIR__ . '/modules/Database.php';
 $db = new Database($target, true);
-require 'modules/API.php';
+require __DIR__ . '/modules/API.php';
 $api = new API();
 
 # constants
@@ -33,7 +32,7 @@ header('Connection: keep-alive');
 
 # loop on consecutive requests to Twitter API
 if ($useCache) {
-    $cacheDir = "cache/$target";
+    $cacheDir = __DIR__ . "/cache/$target";
     if (!file_exists($cacheDir)) mkdir($cacheDir, recursive: true);
 }
 $ended = false;
@@ -164,7 +163,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
             $photo = substr($photoUrl, strlen(TWIMG_IMAGES));
             if (download($photoUrl, str_replace('/', '_', $photo), $userId) == 0
                 && $dbUser && $dbUser['photo'] != null && $iTarget != $userId)
-                deleteOldFile("media/$iTarget/$userId/" .
+                deleteOldFile(__DIR__ . "/media/$iTarget/$userId/" .
                     str_replace('/', '_', $dbUser['photo']),
                     'Old profile photo was removed.');
         } else
@@ -174,7 +173,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
             if (download($ul->profile_banner_url,
                     str_replace('/', '_', $banner) . '.jfif', $userId
                 ) == 0 && $dbUser && $dbUser['banner'] != null && $iTarget != $userId)
-                deleteOldFile("media/$iTarget/$userId/" .
+                deleteOldFile(__DIR__ . "/media/$iTarget/$userId/" .
                     str_replace('/', '_', $dbUser['banner']) . '.jfif',
                     'Old profile banner was removed.');
         } else
@@ -299,7 +298,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
 function download(string $url, string $fileName, int $user): int {
     # ensure existence of itself and its directory
     global $target;
-    $mediaDir = "media/$target/$user";
+    $mediaDir = __DIR__ . "/media/$target/$user";
     if (!file_exists($mediaDir))
         mkdir($mediaDir, recursive: true);
     else
@@ -318,7 +317,7 @@ function download(string $url, string $fileName, int $user): int {
             CURLOPT_FILE => $file,
             CURLOPT_TIMEOUT => 60,
         ));
-        if (PHP_OS == 'WINNT') {
+        if (gethostname() == 'CHIMAERA') {
             curl_setopt($curl, CURLOPT_PROXY, '127.0.0.1:8580');
             curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
         }
@@ -362,7 +361,7 @@ function error(string $data): void {
 
 # update the targets file
 if (!$useCache && $search == null && $sect <= 3) {
-    require 'modules/config.php';
+    require __DIR__ . '/modules/config.php';
     $targets = readTargets();
     if (!array_key_exists($target, $targets))
         $targets[$target] = array('user' => $targetUsername, 'last' => $lastSync);

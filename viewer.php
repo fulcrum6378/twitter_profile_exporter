@@ -3,7 +3,7 @@
 # target database
 if (isset($_GET['t'])) $target = $_GET['t'];
 if (!isset($target)) die("No target detected!");
-require 'modules/Database.php';
+require __DIR__ . '/modules/Database.php';
 $db = new Database($target, true);
 
 # user
@@ -41,11 +41,8 @@ if ($tweetCount == 0) {
     if ($pMax < $pageCount - 1) $pRng[] = $pageCount - 1;
 }
 
-# front-end assets
-if (!is_file('frontend/jquery.min.js') || filesize('frontend/jquery.min.js') == 0)
-    require 'frontend/install.php';
-
 # miscellaneous
+require __DIR__ . '/frontend/install.php';  // install the front-end assets if needed
 $rtl = ['fa', 'ar', 'he'];
 date_default_timezone_set('Asia/Tehran');
 

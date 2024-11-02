@@ -2,11 +2,12 @@
 
 # targets
 if (!isset($targets)) {
-    require 'modules/config.php';
+    require __DIR__ . '/modules/config.php';
     $targets = readTargets();
 }
 
 # miscellaneous
+require __DIR__ . '/frontend/install.php';  // install the front-end assets if needed
 date_default_timezone_set("Asia/Tehran");
 
 ?><!DOCTYPE html>
