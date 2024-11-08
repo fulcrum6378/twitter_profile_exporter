@@ -164,7 +164,7 @@ while ($ent = $tweets->fetchArray()) :
             $twt = $db->queryTweet($twt['retweet']);
             $bottomId = $twt['id'];
         }
-        $tu = u($twt['user']);
+        $tu = u($twt['user'], true);
         $stat = $db->queryTweetStat($twt['id']);
 ?>
   <section<?= $bottomId == $twt['id'] ? ' class="border-bottom"' : '' ?>>
@@ -244,7 +244,7 @@ while ($ent = $tweets->fetchArray()) :
         <div class="quote border">
 <?php
             if ($qut) :
-                $quu = u($qut['user']);
+                $quu = u($qut['user'], true);
 ?>
           <p class="author text-body-secondary">
             <img src="media/<?= "$target/{$qut['user']}/" . profilePhoto($quu) ?>">
@@ -395,21 +395,22 @@ endwhile;
 <script src="frontend/viewer.js"></script>
 </body>
 </html><?php
-function u(string|int $id): array|int {
+function u(string|int $id, bool $defaultNullArray = false): array|int|null {
     global $db, $users;
     if (is_int($id)) $id = strval($id);
     if (array_key_exists($id, $users))
         return $users[$id];
     else {
         $nu = $db->queryUser($id);
-        if (gettype($nu) != 'array') return $nu;
-        $users[$id] = $nu;
+        if (gettype($nu) != 'array')
+            return !$defaultNullArray ? $nu : array('user' => null, 'name' => null, 'photo' => null);
+        if (!$defaultNullArray) $users[$id] = $nu;
         return $nu;
     }
 }
 
 function profilePhoto(array $user): ?string {
-    return str_replace('/', '_', $user['photo']);
+    return $user['photo'] != null ? str_replace('/', '_', $user['photo']) : null;
 }
 
 function n(?int $num): string {

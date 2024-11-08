@@ -155,14 +155,17 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
         if ($userId == $iTarget && $targetUsername == null)
             $targetUsername = $ul->screen_name;
         $dbUser = $db->queryUser($userId, 'photo,banner');
-        if (!$dbUser) say("Processing user @$ul->screen_name (id:$userId)");
+        $dbUserExists = false;
+        if ($dbUser == -1) error('Database is locked!');
+        else if ($dbUser == -2) say("Processing user @$ul->screen_name (id:$userId)");
+        else $dbUserExists = true;
 
         # process user images
         if (property_exists($ul, 'profile_image_url_https')) {
             $photoUrl = str_replace('_normal', '', $ul->profile_image_url_https);
             $photo = substr($photoUrl, strlen(TWIMG_IMAGES));
             if (download($photoUrl, str_replace('/', '_', $photo), $userId) == 0
-                && $dbUser && $dbUser['photo'] != null && $iTarget != $userId)
+                && $dbUserExists && $dbUser['photo'] != null && $iTarget != $userId)
                 deleteOldFile(__DIR__ . "/media/$iTarget/$userId/" .
                     str_replace('/', '_', $dbUser['photo']),
                     'Old profile photo was removed.');
@@ -172,7 +175,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
             $banner = substr($ul->profile_banner_url, strlen(TWIMG_BANNERS));
             if (download($ul->profile_banner_url,
                     str_replace('/', '_', $banner) . '.jfif', $userId
-                ) == 0 && $dbUser && $dbUser['banner'] != null && $iTarget != $userId)
+                ) == 0 && $dbUserExists && $dbUser['banner'] != null && $iTarget != $userId)
                 deleteOldFile(__DIR__ . "/media/$iTarget/$userId/" .
                     str_replace('/', '_', $dbUser['banner']) . '.jfif',
                     'Old profile banner was removed.');
@@ -182,7 +185,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
         # insert/update User
         $link = property_exists($ul, 'url') ? $ul->entities->url->urls[0]->expanded_url : null;
         $pinnedTweet = (count($ul->pinned_tweet_ids_str) > 0) ? $ul->pinned_tweet_ids_str[0] : null;
-        if (!$dbUser)
+        if (!$dbUserExists)
             $db->insertUser($userId,
                 $ul->screen_name, $ul->name, $ul->description,
                 strtotime($ul->created_at), $ul->location, $photo, $banner, $link,
