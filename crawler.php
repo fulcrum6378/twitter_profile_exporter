@@ -137,7 +137,8 @@ function parseEntry(stdClass $entry): bool {
     if (property_exists($entry->content, 'itemContent'))
         $ret = parseTweet($entry->content->itemContent->tweet_results->result);
     else foreach ($entry->content->items as $item)
-        $ret = parseTweet($item->item->itemContent->tweet_results->result);
+        if (property_exists($item->item->itemContent->tweet_results, 'result'))
+            $ret = parseTweet($item->item->itemContent->tweet_results->result);
 
     $parsedTweetsCount++;
     return $ret;
