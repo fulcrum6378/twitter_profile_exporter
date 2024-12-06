@@ -278,7 +278,8 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
 
     # links
     foreach ($tweet->legacy->entities->urls as $link)
-        $text = str_replace($link->url, $link->expanded_url, $text);
+        if (property_exists($link, 'expanded_url'))
+            $text = str_replace($link->url, $link->expanded_url, $text);
 
     # insert Tweet
     $db->insertTweet($tweetId,
