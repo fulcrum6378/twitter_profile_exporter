@@ -19,6 +19,8 @@ class Database {
 
         $this->db = new SQLite3("$dbDir/$userId.db");
         if (!$preExisting) $this->createTables();
+        $this->db->exec("PRAGMA busy_timeout = 5000;");
+        $this->db->exec('PRAGMA journal_mode = WAL;');
     }
 
     function createTables(): void {

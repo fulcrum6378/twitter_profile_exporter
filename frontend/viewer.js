@@ -73,6 +73,7 @@ $('#crawlGo').click(function () {
     $('#crawlHalt').show()
     $('#crawlForm').hide()
     $(this).addClass('spinning')
+    window.onbeforeunload = () => "Are you sure you want to cancel the crawling process?";
 
     crawler = new EventSource('crawler.php?' + $('#crawlForm').serialize() + '&sse=1')
     crawler.onmessage = (event) => {
@@ -98,6 +99,7 @@ function crawlEnded(button) {
     if (crawler === null) return
     crawler.close()
     crawler = null
+    window.onbeforeunload = null;
     button.removeClass('spinning')
     $('#crawlCancel').text('OK')
     $('#crawlCancel').show()
