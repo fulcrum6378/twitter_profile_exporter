@@ -9,6 +9,8 @@ class Database {
     private SQLite3 $db;
 
     const int PAGE_LENGTH = 20;
+    const string TWIMG_IMAGES = 'https://pbs.twimg.com/profile_images/';
+    const string TWIMG_BANNERS = 'https://pbs.twimg.com/profile_banners/';
 
     /** Requires the `sqlite3` extension to be enabled. */
     function __construct(string $userId, bool $createIfNotExists = false) {

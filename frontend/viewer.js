@@ -47,6 +47,13 @@ $('#crwUpdateOnly').change(function () {
     localStorage.setItem(CRAWL_UPDATE_ONLY, $(this).is(':checked'))
 })
 
+const CRAWL_DOWNLOAD_MEDIA = 'crawl_download_media'
+let crawlDownloadMedia = localStorage.getItem(CRAWL_DOWNLOAD_MEDIA)
+if (crawlDownloadMedia !== null) $('#crwDownloadMedia').prop('checked', crawlDownloadMedia === 'true')
+$('#crwDownloadMedia').change(function () {
+    localStorage.setItem(CRAWL_DOWNLOAD_MEDIA, $(this).is(':checked'))
+})
+
 const CRAWL_DELAY = 'crawl_delay'
 let crawlDelay = localStorage.getItem(CRAWL_DELAY)
 if (crawlDelay !== null) $('#crwDelay').val(crawlDelay)

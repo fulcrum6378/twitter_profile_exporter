@@ -5,9 +5,10 @@ $target = $argv[1] ?? $_GET['t'];
 $search = $argv[3] ?? $_GET['search'] ?? null;
 if ($search != null) $search = urldecode($search);
 $sect = isset($_GET['sect']) ? intval($_GET['sect']) : 2;
-$updateOnly = ($argv[2] ?? $_GET['update_only'] ?? '0') == '1';
-$useCache = ($_GET['use_cache'] ?? '0') == '1';
 $maxEntries = isset($_GET['max_entries']) ? intval($_GET['max_entries']) : 0;
+$useCache = ($_GET['use_cache'] ?? '0') == '1';
+$updateOnly = ($argv[2] ?? $_GET['update_only'] ?? '0') == '1';
+$downloadMedia = ($_GET['download_media'] ?? '0') == '1';
 $delay = isset($_GET['delay']) ? intval($_GET['delay']) : 10;
 $sse = ($_GET['sse'] ?? '0') == '1';
 
@@ -19,10 +20,6 @@ require __DIR__ . '/modules/Database.php';
 $db = new Database($target, true);
 require __DIR__ . '/modules/API.php';
 $api = new API();
-
-# constants
-const TWIMG_IMAGES = 'https://pbs.twimg.com/profile_images/';
-const TWIMG_BANNERS = 'https://pbs.twimg.com/profile_banners/';
 
 # HTTP headers
 header('X-Accel-Buffering: no');
@@ -146,7 +143,7 @@ function parseEntry(stdClass $entry): bool {
 
 function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
     if (!property_exists($tweet, 'rest_id')) return true; // TweetTombstone
-    global $parsedUsers, $db, $iTarget, $targetUsername;
+    global $downloadMedia, $parsedUsers, $db, $iTarget, $targetUsername;
     $tweetId = intval($tweet->rest_id);
 
     # User
@@ -164,8 +161,8 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
         # process user images
         if (property_exists($ul, 'profile_image_url_https')) {
             $photoUrl = str_replace('_normal', '', $ul->profile_image_url_https);
-            $photo = substr($photoUrl, strlen(TWIMG_IMAGES));
-            if (download($photoUrl, str_replace('/', '_', $photo), $userId) == 0
+            $photo = substr($photoUrl, strlen(Database::TWIMG_IMAGES));
+            if ($downloadMedia && download($photoUrl, str_replace('/', '_', $photo), $userId) == 0
                 && $dbUserExists && $dbUser['photo'] != null && $iTarget != $userId)
                 deleteOldFile(__DIR__ . "/media/$iTarget/$userId/" .
                     str_replace('/', '_', $dbUser['photo']),
@@ -173,8 +170,8 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
         } else
             $photo = null;
         if (property_exists($ul, 'profile_banner_url')) {
-            $banner = substr($ul->profile_banner_url, strlen(TWIMG_BANNERS));
-            if (download($ul->profile_banner_url,
+            $banner = substr($ul->profile_banner_url, strlen(Database::TWIMG_BANNERS));
+            if ($downloadMedia && download($ul->profile_banner_url,
                     str_replace('/', '_', $banner) . '.jfif', $userId
                 ) == 0 && $dbUserExists && $dbUser['banner'] != null && $iTarget != $userId)
                 deleteOldFile(__DIR__ . "/media/$iTarget/$userId/" .
@@ -265,7 +262,7 @@ function parseTweet(stdClass $tweet, ?int $retweetFromUser = null): bool {
         $db->insertMedia($medId, $medExt, $medUrl, $tweetId);
 
         # download
-        try {
+        if ($downloadMedia) try {
             download($medUrl, "$medId.$medExt", $userId);
         } catch (TypeError $e) {
             say($e);

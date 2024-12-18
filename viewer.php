@@ -69,13 +69,13 @@ date_default_timezone_set('Asia/Tehran');
 
 <body class="container border-start border-end">
 <?php if ($u['banner'] != null) : ?>
-<img id="banner" src="media/<?= "$target/$uid/" . str_replace('/', '_', $u['banner']) . '.jfif' ?>">
+<img id="banner" src="<?= profileBanner($u) ?>">
 <?php else : ?>
 <div id="banner"></div>
 <?php endif ?>
 <header>
   <figure>
-    <img id="photo" src="media/<?= "$target/$uid/" . profilePhoto($u) ?>">
+    <img id="photo" src="<?= profilePhoto($u) ?>">
   </figure>
 
   <div id="actions">
@@ -169,8 +169,7 @@ while ($ent = $tweets->fetchArray()) :
 ?>
   <section<?= $bottomId == $twt['id'] ? ' class="border-bottom"' : '' ?>>
     <figure>
-      <img class="author mt-<?= $isRetweet ? 4 : 2 ?>"
-           src="media/<?= "$target/{$twt['user']}/" . profilePhoto($tu) ?>">
+      <img class="author mt-<?= $isRetweet ? 4 : 2 ?>" src="<?= profilePhoto($tu) ?>">
 <?php
         if ($bottomId != $twt['id']) :
 ?>
@@ -216,15 +215,16 @@ while ($ent = $tweets->fetchArray()) :
 ?>
         <div class="media media-<?= count($mediaIds) ?>">
 <?php
-            foreach ($mediaIds as $med) :
-                $ext = $db->queryMedium($med)['ext'];
-                if ($ext != 'mp4') : ?>
-          <img src="media/<?= "$target/{$twt['user']}/$med.$ext" ?>" class="border">
+            foreach ($mediaIds as $medId) :
+                $med = $db->queryMedium($medId);
+                $medSrc = mediumSrc($twt['user'], $med);
+                if ($med['ext'] != 'mp4') : ?>
+          <img src="<?= $medSrc ?>" class="border">
 <?php
                 else :
 ?>
           <video controls class="border">
-            <source src="media/<?= "$target/{$twt['user']}/$med.mp4" ?>" type="video/mp4">
+            <source src="<?= $medSrc ?>" type="video/mp4">
           </video>
 <?php
                 endif;
@@ -247,7 +247,7 @@ while ($ent = $tweets->fetchArray()) :
                 $quu = u($qut['user'], true);
 ?>
           <p class="author text-body-secondary">
-            <img src="media/<?= "$target/{$qut['user']}/" . profilePhoto($quu) ?>">
+            <img src="<?= profilePhoto($quu) ?>">
             <a href="viewer.php?t=<?= $target ?>&u=<?= $qut['user'] ?>&sect=1" target="_blank">
               <span class="text-body fw-bold"><?= $quu['name'] ?></span>
               @<span><?= $quu['user'] ?></span>
@@ -264,16 +264,17 @@ while ($ent = $tweets->fetchArray()) :
 ?>
           <div class="media media-<?= count($mediaIds) ?>">
 <?php
-                    foreach ($mediaIds as $med) :
-                        $ext = $db->queryMedium($med)['ext'];
-                        if ($ext != 'mp4') :
+                    foreach ($mediaIds as $medId) :
+                        $med = $db->queryMedium($medId);
+                        $medSrc = mediumSrc($qut['user'], $med);
+                        if ($med['ext'] != 'mp4') :
 ?>
-            <img src="media/<?= "$target/{$qut['user']}/$med.$ext" ?>" class="border">
+            <img src="media/<?= $medSrc ?>" class="border">
 <?php
                         else :
 ?>
             <video controls class="border">
-              <source src="media/<?= "$target/{$qut['user']}/$med.mp4" ?>" type="video/mp4">
+              <source src="media/<?= $medSrc ?>" type="video/mp4">
             </video>
 <?php
                         endif;
@@ -376,7 +377,13 @@ endwhile;
             <label class="form-check-label" for="crwUpdateOnly">Crawl only for newest tweets</label>
           </div>
 
-          <div class="d-flex mt-1">
+          <div class="form-check form-switch mt-1">
+            <input class="form-check-input" type="checkbox" role="switch" name="download_media" value="1"
+                   id="crwDownloadMedia" checked>
+            <label class="form-check-label" for="crwDownloadMedia">Download media</label>
+          </div>
+
+          <div class="d-flex mt-2">
             <input type="number" name="delay" id="crwDelay" class="form-control" value="5">
             <label class="form-label mt-2 ms-2" for="crwDelay">seconds waiting between each request</label>
           </div>
@@ -409,8 +416,31 @@ function u(string|int $id, bool $defaultNullArray = false): array|int|null {
     }
 }
 
-function profilePhoto(array $user): ?string {
-    return $user['photo'] != null ? str_replace('/', '_', $user['photo']) : null;
+function profileBanner(array $user): string {
+    global $target;
+    if ($user['banner'] != null) {
+        $medium = "media/$target/{$user['id']}/" . str_replace('/', '_', $user['photo']) . '.jfif';
+        if (is_file($medium)) return $medium;
+        return Database::TWIMG_BANNERS . $user['banner'];
+    }
+    return ""; // FIXME
+}
+
+function profilePhoto(array $user): string {
+    global $target;
+    if ($user['photo'] != null) {
+        $medium = "media/$target/{$user['id']}/" . str_replace('/', '_', $user['photo']);
+        if (is_file($medium)) return $medium;
+        return Database::TWIMG_IMAGES . $user['photo'];
+    }
+    return "https://abs.twimg.com/sticky/default_profile_images/default_profile_200x200.png";
+}
+
+function mediumSrc(string $userId, array $med): string {
+    global $target;
+    $medium = "media/$target/$userId/{$med['id']}.{$med['ext']}";
+    if (is_file($medium)) return $medium;
+    return $med['url'];
 }
 
 function n(?int $num): string {

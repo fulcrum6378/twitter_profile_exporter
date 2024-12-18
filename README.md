@@ -7,7 +7,7 @@ Then it'll be able to reconstruct a Twitter profile in front-end.
 
 ## Requirements
 
-1. **PHP 8+** with *curl* and *sqlite3* extensions enabled.
+1. **PHP 8.3** with *curl* and *sqlite3* extensions enabled.
 2. A Twitter account, logged in via Google Chrome desktop.
 
 ## Setup
@@ -50,12 +50,14 @@ Then it'll be able to reconstruct a Twitter profile in front-end.
   - `t=` target Twitter ID number (required)
   - `search=` URL-encoded search query
   - `sect=` section number (defaults to 2)
-  - `update_only=` whether it should abandon crawling if it finds already parsed tweets.
-    Only values `1` and `0` are valid as yes and no (defaults to 0(no))
-  - `use_cache=` whether it should store JSON responses in /cache/ and use them again (typically for debugging).
-    Only values `1` and `0` (defaults to 0)
   - `max_entries=` maximum entries allowed to be retrieved
     (entries not tweets; entries can be follow suggestions as well). Set to 0 in order to turn it off. (defaults to 0)
+  - `use_cache=` whether it should store JSON responses in /cache/ and use them again (typically for debugging).
+    Only values `1` and `0` (defaults to 0)
+  - `update_only=` whether it should abandon crawling if it finds already parsed tweets.
+    Only values `1` and `0` are valid as yes and no (defaults to 0(no))
+  - `download_media=` whether it should download profile pictures, banners and tweet attachments or not.
+    Only values `1` and `0` are valid as yes and no (defaults to 1(yes))
   - `delay=` delay (in seconds) between each API request in order not to be detected as a bot. (defaults to 10)
   - `sse=` whether or not it must send [Server-Sent Events](https://en.wikipedia.org/wiki/Server-sent_events).
     Only values `1` and `0` (defaults to 0)
